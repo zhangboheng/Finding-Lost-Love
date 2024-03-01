@@ -20,6 +20,8 @@ export default class Instruction {
     // 绘制陆地
     this.yardImage = new Image();
     this.yardImage.src = 'image/yard.jpg';
+    // 陆地高度
+    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
     // 创建返回按钮
     this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
       this.game.switchScene(new this.game.startup(this.game));
@@ -29,15 +31,25 @@ export default class Instruction {
       width: 20,
       height: 35,
       x: 35,
-      y: menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35,
+      y: this.groundHeight,
       speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
-      rightFrames: [], // 存储向右帧图片的数组
       leftFrames: [], // 存储向左帧图片的数组
-      jumpFrames: [], // 存储弹跳图片的数组
-      shotFrames: [], // 存储发射图片的数组
+      rightFrames: [], // 存储向右帧图片的数组
+      leftJumpFrames: [], // 存储向左弹跳图片的数组
+      rightJumpFrames: [], // 存储向右弹跳图片的数组
+      leftShotFrames: [], // 存储向左发射图片的数组
+      rightShotFrames: [], // 存储向右发射图片的数据
       currentRightFrameIndex: 0,
       currentLeftFrameIndex: 0,
       theLastAction: '', // 按钮停下后最后一个动作
+      jumping: false,
+      jumpStartY: 0,
+      jumpStartTime: 0,
+      jumpHeight: 30, // 跳跃高度
+      gravity: 0.3,    // 重力
+      jumpSpeed: -10,   // 起跳初始速度
+      velocityY: 0, // 纵向速度
+      isOnGround: true, // 初始化在地面
     };
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
@@ -47,11 +59,25 @@ export default class Instruction {
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png']
+    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
       this.character.leftFrames.push(frame);
+    }
+    // 向右移动跳动的图片集锦
+    const framePathsRightJump = ['image/rightjump1.png', 'image/rightjump2.png'];
+    for (const path of framePathsRightJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightJumpFrames.push(frame);
+    }
+    // 向左移动弹跳的图片集锦
+    const framePathsLeftJump = ['image/leftjump1.png', 'image/leftjump2.png'];
+    for (const path of framePathsLeftJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftJumpFrames.push(frame);
     }
     // 添加触摸事件监听
     wx.onTouchStart(this.touchStartHandler.bind(this));
@@ -102,12 +128,21 @@ export default class Instruction {
   }
   // 绘制人物
   drawCharacter() {
-    if(this.character.theLastAction == 'right'){
-      this.context.drawImage(this.character.rightFrames[this.character.currentRightFrameIndex], this.character.x, this.character.y, this.character.width, this.character.height);
+    let characterImg;
+    if(this.character.theLastAction == 'right' || this.character.theLastAction == ''){
+      if(this.character.isOnGround){
+        characterImg = this.character.rightFrames[this.character.currentRightFrameIndex];
+      }else{
+        characterImg = this.character.gravity > 0 ? this.character.rightJumpFrames[0] : this.character.rightJumpFrames[1];
+      }
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
     }else if(this.character.theLastAction == 'left'){
-      this.context.drawImage(this.character.leftFrames[this.character.currentLeftFrameIndex], this.character.x, this.character.y, this.character.width, this.character.height);
-    }else{
-      this.context.drawImage(this.character.rightFrames[this.character.currentRightFrameIndex], this.character.x, this.character.y, this.character.width, this.character.height);
+      if(this.character.isOnGround){
+        characterImg = this.character.leftFrames[this.character.currentLeftFrameIndex];
+      }else{
+        characterImg = this.character.gravity > 0 ? this.character.leftJumpFrames[0] : this.character.leftJumpFrames[1];
+      }
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
     }
   }
   // 更新绘制人物
@@ -116,6 +151,22 @@ export default class Instruction {
       this.moveRightCharacter();
     }else if(this.pressingDirection == 'left'){
       this.moveLeftCharacter();
+    }
+    if (this.character.jumping) {
+      this.character.velocityY -= this.character.gravity;
+      this.character.y += this.character.velocityY;
+      if (this.groundHeight - this.character.y > this.character.jumpHeight) {
+        this.character.gravity = -0.3;
+      }
+      // 如果达到地面，结束跳跃
+      if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
+        this.character.jumping = false;
+        this.character.isOnGround = true;
+        this.character.y = this.groundHeight;
+        this.character.gravity = 0.3;
+        this.character.velocityY = 0;
+        this.character.jumpStartY = 0;
+      }
     }
   }
   // 绘制手柄
@@ -127,7 +178,7 @@ export default class Instruction {
     const arrowSize = joystickSize * 0.5;
     // 绘制方向键（D-Pad）
     const padSize = joystickSize * 0.6;
-    const buttonSize = padSize * 1;
+    const buttonSize = padSize * 1 + 4;
     // 保存当前context状态
     this.context.save();
     // 上方向键
@@ -227,6 +278,7 @@ export default class Instruction {
     this.drawCharacter()
   }
   update() {
+    // 更新人物动态
     this.updateCharacter();
   }
   // 通用返回按钮作用区
@@ -293,22 +345,23 @@ export default class Instruction {
       touchX >= menuButtonInfo.right - buttonSize * 2.5 && touchX <= menuButtonInfo.right - buttonSize * 2.5 + buttonSize &&
       touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3/2) {
       // 发射
-      this.character.theLastAction = 'shot';
-    } else if (
+    }else if (
       touchX >= menuButtonInfo.right - buttonSize && touchX <= menuButtonInfo.right &&
       touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2) {
       // 跳跃
-      this.character.theLastAction = 'jump';
+      this.jumpHandler();
     }
   }
   touchEndHandler(e) {
     if (this.pressingDirection == 'right') {
       this.character.currentRightFrameIndex = 0;
+      this.pressingDirection = null; // 清空按键方向
+      this.pressStartTime = 0; // 清空长按开始时间
     }else if(this.pressingDirection == 'left'){
       this.character.currentLeftFrameIndex = 0;
+      this.pressingDirection = null; // 清空按键方向
+      this.pressStartTime = 0; // 清空长按开始时间
     }
-    this.pressingDirection = null; // 清空按键方向
-    this.pressStartTime = 0; // 清空长按开始时间
   }
   // 向右移动动作
   moveRightCharacter(){
@@ -326,6 +379,14 @@ export default class Instruction {
     }
     this.character.currentLeftFrameIndex = (this.character.currentLeftFrameIndex + 1) % this.character.leftFrames.length;
   }
+  // 跳跃的事件处理
+  jumpHandler(){
+    if(!this.character.jumping){
+      this.character.jumping = true;
+      this.character.isOnGround = false;
+      this.character.jumpStartY = this.character.y;
+    }
+  }
   // 页面销毁机制
   destroy() {
     // 移除触摸事件监听器
@@ -337,27 +398,35 @@ export default class Instruction {
     this.gameBackground.src = '';
     this.yardImage.src = '';
     // 清理人物图片
-    this.destroyCharacterFrames();
+    // this.destroyCharacterFrames();
   }
   // 返回其他层后销毁加载图片，避免内存泄漏
   destroyCharacterFrames() {
-    for (let i = 0; i < this.character.rightFrames.length; i++) {
-      this.destroyImage(this.character.rightFrames[i]);
-    }
     for (let i = 0; i < this.character.leftFrames.length; i++) {
       this.destroyImage(this.character.leftFrames[i]);
     }
-    for (let i = 0; i < this.character.jumpFrames.length; i++) {
-      this.destroyImage(this.character.jumpFrames[i]);
+    for (let i = 0; i < this.character.rightFrames.length; i++) {
+      this.destroyImage(this.character.rightFrames[i]);
     }
-    for (let i = 0; i < this.character.shotFrames.length; i++) {
-      this.destroyImage(this.character.shotFrames[i]);
+    for (let i = 0; i < this.character.leftJumpFrames.length; i++) {
+      this.destroyImage(this.character.leftJumpFrames[i]);
+    }
+    for (let i = 0; i < this.character.rightJumpFrames.length; i++) {
+      this.destroyImage(this.character.rightJumpFrames[i]);
+    }
+    for (let i = 0; i < this.character.leftShotFrames.length; i++) {
+      this.destroyImage(this.character.leftShotFrames[i]);
+    }
+    for (let i = 0; i < this.character.rightShotFrames.length; i++) {
+      this.destroyImage(this.character.rightShotFrames[i]);
     }
     // 清空数组
-    this.character.rightFrames = [];
     this.character.leftFrames = [];
-    this.character.jumpFrames = [];
-    this.character.shotFrames = [];
+    this.character.rightFrames = [];
+    this.character.leftJumpFrames = [];
+    this.character.rightJumpFrames = [];
+    this.character.leftShotFrames = [];
+    this.character.rightShotFrames = [];
   }
   // 销毁图片时调用
   destroyImage(imageObject) {
