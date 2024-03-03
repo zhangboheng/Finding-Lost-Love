@@ -11,9 +11,6 @@ export default class Instruction {
     canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
     canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
     this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
-    // 绘制背景
-    this.backgroundImage = new Image();
-    this.backgroundImage.src = 'image/thumbnail.jpg';
     // 绘制游戏区域背景
     this.gameBackground = new Image();
     this.gameBackground.src = 'image/background.jpg';
@@ -102,6 +99,10 @@ export default class Instruction {
     this.cycleImage.src = 'image/cycle.png';
     this.cycleSpeed = systemInfo.screenWidth * 0.005;
     this.cycleAddDistence = 0;
+    this.cycleAddHeight = 0;
+    this.angle = 0; // 冲击波旋转角度
+    this.cycleX = 0; // 记录发出冲击波的初始位置
+    this.direction = ''; //记录冲击波的方向
     // 添加触摸事件监听
     wx.onTouchStart(this.touchStartHandler.bind(this));
     wx.onTouchEnd(this.touchEndHandler.bind(this));
@@ -109,12 +110,8 @@ export default class Instruction {
   }
   // 绘制背景
   drawBackground() {
-    // 绘制背景图片
-    if (this.backgroundImage.complete) {
-      this.context.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
-    }
     // 带有透明度的白色背景
-    this.context.fillStyle = '#00000099';
+    this.context.fillStyle = '#000000';
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
   // 绘制返回按钮
@@ -130,22 +127,19 @@ export default class Instruction {
     // 绘制黑色矩形
     const rectHeight = this.canvas.height * 0.6;
     this.context.fillStyle = '#000000'; // 黑色
-    this.context.fillRect(13, menuButtonInfo.bottom + 10, this.canvas.width - 26, rectHeight);
-    this.context.strokeStyle = '#ffffff99';
-    this.context.lineWidth = 3;
-    this.context.strokeRect(13, menuButtonInfo.bottom + 10, this.canvas.width - 26, rectHeight);
+    this.context.fillRect(0, 0, this.canvas.width, rectHeight);
     this.context.restore();
   }
   // 绘制游戏背景
   drawGameBackground() {
     if(this.gameBackground.complete){
-      this.context.drawImage(this.gameBackground, 16, menuButtonInfo.bottom + 13, this.canvas.width - 32, this.canvas.height * 0.6 - 6)
+      this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
     }
   }
   // 绘制陆地
   drawYard() {
     if(this.yardImage.complete){
-      this.context.drawImage(this.yardImage, 16, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width - 32, this.canvas.height * 0.1)
+      this.context.drawImage(this.yardImage, 0, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width, this.canvas.height * 0.1)
     }
   }
   // 绘制人物
@@ -183,11 +177,11 @@ export default class Instruction {
       this.moveLeftCharacter();
     }
     if (this.character.jumping) {
-      this.character.velocityY -= this.character.gravity;
-      this.character.y += this.character.velocityY;
       if (this.groundHeight - this.character.y > this.character.jumpHeight) {
         this.character.gravity = -0.3;
       }
+      this.character.velocityY -= this.character.gravity;
+      this.character.y += this.character.velocityY;
       // 如果达到地面，结束跳跃
       if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
         this.character.jumping = false;
@@ -196,21 +190,58 @@ export default class Instruction {
         this.character.gravity = 0.3;
         this.character.velocityY = 0;
         this.character.jumpStartY = 0;
+        this.character.jumpHeight = this.canvas.height * 0.06;
       }
     }
   }
   // 绘制冲击波
   drawCycleWave() {
-    if (this.character.shotWave && (this.character.theLastAction == 'right' || this.character.theLastAction == '')){
-      if(this.cycleImage.complete){
-        this.context.drawImage(this.cycleImage, this.character.x + 18 + this.cycleAddDistence, this.character.y + 8, 16, 16);
+    if (this.character.shotWave){
+      if(this.direction == 'right'){
+        if(this.cycleImage.complete){
+          this.context.save();
+          this.context.translate(this.cycleX + 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
+          this.context.rotate(this.angle);
+          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.restore();
+          // 增加角度以实现旋转
+          this.angle += 0.05;
+        }
+      }else if(this.direction == 'left'){
+        if(this.cycleImage.complete){
+          this.context.save();
+          this.context.translate(this.cycleX - 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
+          this.context.rotate(this.angle);
+          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.restore();
+          // 增加角度以实现旋转
+          this.angle += 0.05;
+        }
       }
     }
   }
   // 更新冲击波
   updateCycleWave(){
-    if (this.character.shotWave && (this.character.theLastAction == 'right' || this.character.theLastAction == '')){
-      this.cycleAddDistence += this.cycleSpeed;
+    if (this.character.shotWave){
+      if(this.direction == 'right'){
+        if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20){
+          this.character.shotWave = false;
+          this.cycleAddDistence = 0;
+          this.angle = 0;
+          this.direction = '';
+        }else{
+          this.cycleAddDistence += this.cycleSpeed;
+        }
+      }else if(this.direction == 'left'){
+        if (this.cycleX + this.cycleAddDistence <= 20){
+          this.character.shotWave = false;
+          this.cycleAddDistence = 0;
+          this.angle = 0;
+          this.direction = '';
+        }else{
+          this.cycleAddDistence -= this.cycleSpeed;
+        }
+      }
     }
   }
   // 绘制手柄
@@ -308,8 +339,6 @@ export default class Instruction {
   draw() {
     // 绘制背景
     this.drawBackground();
-    // 绘制返回按钮
-    this.drawBack();
     // 绘制游戏活动区域
     this.drawActionZone();
     // 绘制移动按钮所在区域
@@ -322,6 +351,8 @@ export default class Instruction {
     this.drawCharacter();
     // 绘制冲击波
     this.drawCycleWave();
+    // 绘制返回按钮
+    this.drawBack();
   }
   update() {
     // 更新人物动态
@@ -360,8 +391,8 @@ export default class Instruction {
       touchY >= joystickY - padSize / 2 - buttonSize && touchY <= joystickY - padSize / 2
     ) {
       // 上方向键
-      this.pressingDirection = 'up';
-      this.character.theLastAction = 'up';
+      // this.pressingDirection = 'up';
+      // this.character.theLastAction = 'up';
     } else if (
       touchX >= 23 + arrowSize && touchX <= 23 + arrowSize + buttonSize &&
       touchY >= joystickY + padSize / 2 && touchY <= joystickY + padSize / 2 + buttonSize
@@ -394,7 +425,12 @@ export default class Instruction {
       touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3/2) {
       // 发射
       this.character.isShot = true;
-      this.toShot();
+      if (!this.character.shotWave){
+        this.toShot();
+      }else{
+        // 第二次按下后瞬移到冲击波所在位置
+        this.toWave();
+      }
     }else if (
       touchX >= menuButtonInfo.right - buttonSize && touchX <= menuButtonInfo.right &&
       touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2) {
@@ -412,16 +448,16 @@ export default class Instruction {
   // 向右移动动作
   moveRightCharacter(){
     this.character.x += this.character.speed;
-    if (this.character.x >= this.canvas.width - 33){
-      this.character.x = this.canvas.width - 33
+    if (this.character.x >= this.canvas.width - 20){
+      this.character.x = this.canvas.width - 20
     }
     this.character.currentRightFrameIndex = (this.character.currentRightFrameIndex + 1) % this.character.rightFrames.length;
   }
   // 向左移动动作
   moveLeftCharacter(){
     this.character.x -= this.character.speed;
-    if (this.character.x <= 13){
-      this.character.x = 13
+    if (this.character.x <= 0){
+      this.character.x = 0
     }
     this.character.currentLeftFrameIndex = (this.character.currentLeftFrameIndex + 1) % this.character.leftFrames.length;
   }
@@ -431,6 +467,37 @@ export default class Instruction {
       this.character.currentRightShotIndex = (this.character.currentRightShotIndex + 1) % this.character.rightShotFrames.length;
       this.character.currentLeftShotIndex = (this.character.currentLeftShotIndex + 1) % this.character.leftShotFrames.length;
       this.character.shotWave = true;
+      this.cycleAddHeight = this.character.y;
+      if (this.character.theLastAction == 'right' || this.character.theLastAction == ''){
+        this.cycleX = this.character.x;
+        this.direction = 'right';
+      }else if(this.character.theLastAction == 'left'){
+        this.cycleX = this.character.x + 18;
+        this.direction = 'left';
+      }
+    }
+  }
+  // 瞬移的事件处理
+  toWave(){
+    if (this.character.theLastAction == 'left'){
+      this.character.x = this.cycleX - 24 + this.cycleAddDistence;
+    }else{
+      this.character.x = this.cycleX + this.cycleAddDistence;
+    }
+    this.character.y = this.cycleAddHeight
+    this.character.shotWave = false;
+    this.cycleAddDistence = 0;
+    this.angle = 0;
+    this.direction = '';
+    this.cycleX = 0;
+    if(this.character.y == this.groundHeight){
+      this.character.isOnGround = true;
+      this.character.jumping = false;
+    }else{
+      this.character.isOnGround = false;
+      this.character.jumping = true;
+      this.character.jumpStartY = this.groundHeight;
+      this.character.jumpHeight = this.groundHeight - this.cycleAddHeight;
     }
   }
   // 跳跃的事件处理
@@ -441,6 +508,44 @@ export default class Instruction {
       this.character.jumpStartY = this.character.y;
     }
   }
+  // 重置游戏
+  resetGame() {
+    // 绘制人物
+    this.character = {
+      width: 20,
+      height: 35,
+      x: 35,
+      y: this.groundHeight,
+      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      leftFrames: [], // 存储向左帧图片的数组
+      rightFrames: [], // 存储向右帧图片的数组
+      leftJumpFrames: [], // 存储向左弹跳图片的数组
+      rightJumpFrames: [], // 存储向右弹跳图片的数组
+      leftShotFrames: [], // 存储向左发射图片的数组
+      rightShotFrames: [], // 存储向右发射图片的数据
+      currentLeftFrameIndex: 0,
+      currentRightFrameIndex: 0,
+      currentLeftShotIndex: 0,
+      currentRightShotIndex: 0,
+      theLastAction: '', // 按钮停下后最后一个动作
+      jumping: false,
+      jumpStartY: 0,
+      jumpStartTime: 0,
+      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      gravity: 0.3,    // 重力
+      jumpSpeed: -10,   // 起跳初始速度
+      velocityY: 0, // 纵向速度
+      isOnGround: true, // 初始化在地面
+      isShot: false, // 发射状态
+      shotWave: false, // 发射冲击波状态
+    };
+    // 重置冲击波数据
+    this.cycleAddDistence = 0;
+    this.cycleAddHeight = 0;
+    this.angle = 0; // 冲击波旋转角度
+    this.cycleX = 0; // 记录发出冲击波的初始位置
+    this.direction = ''; // 记录冲击波方向
+  }
   // 页面销毁机制
   destroy() {
     // 移除触摸事件监听器
@@ -448,11 +553,10 @@ export default class Instruction {
     wx.offTouchEnd(this.touchEndHandler.bind(this));
     // 清理加载图片
     this.backButton.image.src = '';
-    this.backgroundImage.src = '';
     this.gameBackground.src = '';
     this.yardImage.src = '';
     // 清理人物图片
-    // this.destroyCharacterFrames();
+    this.destroyCharacterFrames();
   }
   // 返回其他层后销毁加载图片，避免内存泄漏
   destroyCharacterFrames() {
