@@ -4,7 +4,7 @@ class BackgroundMusic {
     this.backgroundMusic.loop = true;
     // 初始化音乐播放状态
     this.backgroundMusicEnabled = this.getBackgroundMusicState();
-    this.defaultSource = 'audio/begin.mp3';
+    this.defaultSource = 'audio/back.mp3';
     // 设置默认音乐源
     this.setBackgroundMusicSource(this.defaultSource);
   }

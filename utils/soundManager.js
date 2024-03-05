@@ -2,8 +2,9 @@ class SoundManager {
   constructor() {
     this.sounds = {
       down: new Audio('audio/down.mp3'),
-      yell: new Audio('audio/yell.mp3'),
       jump: new Audio('audio/jump.mp3'),
+      move: new Audio('audio/move.mp3'),
+      throw: new Audio('audio/throw.mp3'),
       crack: new Audio('audio/crack.mp3'),
       win: new Audio('audio/gamewin.mp3'),
       lose: new Audio('audio/gameover.mp3')

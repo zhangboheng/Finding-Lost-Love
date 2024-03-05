@@ -46,7 +46,7 @@ export function createBackButton(context, x, y, imagePath, callback) {
 // 带有图标的返回按钮公共方法
 export function drawIconButton(context, text, x, y, callback) {
   // 设置文本样式
-  context.fillStyle = '#f5d659';
+  context.fillStyle = '#fc86bc';
   context.strokeStyle = 'black';
   context.lineWidth = 3;
   context.font = 'bold 20px';

@@ -2,6 +2,7 @@ import Startup from './scene/startup.js';
 import Instruction from './scene/instruction.js';
 import Settings from './scene/settings.js';
 import Begin from './scene/begin.js';
+import Second from './scene/second.js';
 export default class Game {
   constructor() {
     this.initSettings();
@@ -11,8 +12,9 @@ export default class Game {
     this.settings = Settings;
     this.instruction = Instruction;
     this.begin = Begin;
+    this.second = Second;
     this.currentScene = new this.begin(this);
-    this.instanceList = [Begin];
+    this.instanceList = [Begin, Second];
     canvas.addEventListener('touchstart', (e) => {
       this.currentScene.touchHandler(e);
     });
@@ -34,8 +36,8 @@ export default class Game {
     // 设置默认分享信息
     wx.onShareAppMessage(() => {
       return {
-        title: '跃影忍者！太难了吧',
-        imageUrl: 'image/background.jpg' // 分享图片的路径
+        title: '一起寻回我们曾经的美好！',
+        imageUrl: 'image/thumbnail.jpg' // 分享图片的路径
       };
     });
     this.boundLoop = this.loop.bind(this);
@@ -45,11 +47,15 @@ export default class Game {
   initSettings() {
     let getMusicState = wx.getStorageSync('musicEnabled');
     let getBackgroundMusic = wx.getStorageSync('backgroundMusicEnabled');
+    let getLifeCount = wx.getStorageSync('lifeCount');
     if (getMusicState == ''){
       wx.setStorageSync('musicEnabled', true)
     }
     if (getBackgroundMusic == ''){
       wx.setStorageSync('backgroundMusicEnabled', true)  
+    }
+    if (getLifeCount == ''){
+      wx.setStorageSync('lifeCount', 2)
     }
   }
   loop() {
