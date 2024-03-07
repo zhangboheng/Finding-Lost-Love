@@ -238,7 +238,7 @@ export default class Instruction {
   // 绘制陷阱针刺
   drawTraps() {
     if (this.spikesImage.complete){
-      let inter = Math.floor(this.canvas.width * 0.20 / (this.spikesImage.width / 2))
+      let inter = Math.ceil(this.canvas.width * 0.20 / (this.spikesImage.width / 2))
       for(let i = 0; i < inter; i++){
         this.context.drawImage(this.spikesImage, this.spikesX + this.spikesImage.width / 2 * i, this.groundHeight+ this.canvas.height * 0.1, this.spikesImage.width / 2, this.spikesImage.height / 2);
       }
