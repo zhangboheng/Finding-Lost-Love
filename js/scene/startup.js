@@ -65,7 +65,16 @@ export default class Scene1 {
     const touch = e.touches[0];
     if (touch.clientX >= this.buttonX && touch.clientX <= this.buttonX + this.buttonWidth &&
       touch.clientY >= this.buttonY && touch.clientY <= this.buttonY + this.buttonHeight) {
-      this.game.switchScene(new this.game.begin(this.game));
+      const getTrailGame = wx.getStorageSync('trailNumber')
+      if(getTrailGame == 1){
+        this.game.switchScene(new this.game.second(this.game));
+      }else if(getTrailGame == 2){
+        this.game.switchScene(new this.game.third(this.game));
+      }else if(getTrailGame == 3){
+        this.game.switchScene(new this.game.fourth(this.game));
+      }else{
+        this.game.switchScene(new this.game.begin(this.game));
+      }
     }
     // 检测是否点击了第二个按钮
     if (touch.clientX >= this.secondButtonX && touch.clientX <= this.secondButtonX + this.secondButtonWidth &&

@@ -32,7 +32,14 @@ class BackgroundMusic {
   pauseBackgroundMusic() {
     if (this.backgroundMusicEnabled) {
       this.backgroundMusic.pause();
-      this.backgroundMusic.currentTime = 0
+      this.backgroundMusic.currentTime = 0;
+    }
+  }
+  // 停止背景音乐
+  stopBackgroundMusic(){
+    if (this.backgroundMusicEnabled) {
+      this.backgroundMusic.stop();
+      this.backgroundMusic.currentTime = 0;
     }
   }
 }

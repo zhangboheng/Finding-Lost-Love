@@ -1,3 +1,28 @@
+export function circleRectCollision(circle, rect) {
+  // 检测圆心是否在矩形内
+  if (circle.x >= rect.x && circle.x <= rect.x + rect.width &&
+      circle.y >= rect.y && circle.y <= rect.y + rect.height) {
+      return true;
+  }
+  // 检测圆心是否在矩形的上、下、左、右四个边界之一
+  if (circle.x >= rect.x && circle.x <= rect.x + rect.width &&
+      (circle.y + circle.radius >= rect.y && circle.y - circle.radius <= rect.y + rect.height)) {
+      return true;
+  }
+  if (circle.y >= rect.y && circle.y <= rect.y + rect.height &&
+      (circle.x + circle.radius >= rect.x && circle.x - circle.radius <= rect.x + rect.width)) {
+      return true;
+  }
+  // 考虑圆心到矩形的最近点
+  const closestX = Math.max(rect.x, Math.min(circle.x, rect.x + rect.width));
+  const closestY = Math.max(rect.y, Math.min(circle.y, rect.y + rect.height));
+  const distanceX = circle.x - closestX;
+  const distanceY = circle.y - closestY;
+  const distanceSquared = (distanceX ** 2) + (distanceY ** 2);
+  // 检查最近点与圆心的距离是否小于圆的半径
+  return distanceSquared < (circle.radius ** 2);
+}
+
 export function updateHighScores(currentScore) {
   // 尝试从缓存中获取历史排名，如果不存在，则初始化为空数组
   let highScores = JSON.parse(wx.getStorageSync('historyRank')) || [];

@@ -1,5 +1,6 @@
 import {
-  createBackButton
+  createBackButton,
+  drawIconButton,
 } from '../../utils/button';
 let systemInfo = wx.getSystemInfoSync();
 let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
@@ -31,6 +32,11 @@ export default class Instruction {
     this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
     // 创建返回按钮
     this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+      if (this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
+      this.gameOver = true;
       this.game.switchScene(new this.game.startup(this.game));
     });
     // 绘制人物
@@ -133,9 +139,9 @@ export default class Instruction {
     this.direction = ''; //记录冲击波的方向
     // 加载陷阱图片
     this.platform = [
+      'image/terrance.png',
       'image/cave.png',
-      'image/cave.png',
-      'image/cave.png',
+      'image/rock.png',
     ].map(src => {
       const img = new Image();
       img.src = src;
@@ -158,12 +164,24 @@ export default class Instruction {
     this.spikesImage = new Image();
     this.spikesImage.src = 'image/spikes.png';
     this.spikesX = this.canvas.width * 0.25;
+    // 绘制生命数显示
+    this.lifeCount = new Image();
+    this.lifeCount.src = 'image/head.png';
+    // 记录生命总数
+    this.lastLifeCount = null;
     // 添加触摸事件监听
     wx.onTouchStart(this.touchStartHandler.bind(this));
     wx.onTouchEnd(this.touchEndHandler.bind(this));
     this.pressingDirection = null; // 记录当前长按的方向键
     this.gameOver = false; // 记录游戏是否结束
     this.gameWin = false; //记录游戏是否胜利
+    // 重新开始按钮
+    this.buttonStartInfo = "";
+    // 分享好友按钮
+    this.buttonShareInfo = "";
+    // 加载失败图片
+    this.failTipsImage = new Image();
+    this.failTipsImage.src = 'image/gameovertips.png'
   }
   // 绘制背景
   drawBackground() {
@@ -188,6 +206,29 @@ export default class Instruction {
     this.context.textAlign = 'left'; // 文本左对齐
     this.context.textBaseline = 'middle';
     this.context.fillText(number, startX, scoreY);
+  }
+  // 绘制生命数
+  drawLifeCount() {
+    // 记录生命总数
+    this.lastLifeCount = wx.getStorageSync('lifeCount');
+    const iconSize = 32; // 图标大小
+    const iconPadding = 10; // 图标与分数之间的间距
+    // 计算分数文本的宽度
+    this.context.font = '20px Arial'; // 确保设置的字体与绘制时相同
+    const startX = 10;
+    const iconX = startX;
+    const scoreX = iconX + iconSize + iconPadding;
+    const iconY = menuButtonInfo.bottom + 2; // 图标的y坐标
+    const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
+    // 绘制图标
+    if (this.lifeCount.complete) {
+      this.context.drawImage(this.lifeCount, iconX, iconY, iconSize, iconSize);
+    }
+    // 绘制分数
+    this.context.fillStyle = '#ffffff99';
+    this.context.textAlign = 'left'; // 文本左对齐
+    this.context.textBaseline = 'middle';
+    this.context.fillText(`X${this.lastLifeCount}`, scoreX, scoreY);
   }
   // 绘制游戏活动区域
   drawActionZone() {
@@ -293,7 +334,17 @@ export default class Instruction {
         this.gameOver = true;
         soundManager.play('crack');
         soundManager.play('lose', 200);
-        this.stopAction();
+        this.lastLifeCount--
+        if (this.lastLifeCount < 0) {
+          this.lastLifeCount = 0;
+        }
+        wx.setStorageSync('lifeCount', this.lastLifeCount)
+        if (this.lastLifeCount == 0) {
+          this.stopAction();
+        } else {
+          this.resetGame();
+          this.stopAction();
+        }
       }
     }
     // 判断是否处于跳跃
@@ -308,10 +359,8 @@ export default class Instruction {
         this.character.jumping = false;
         this.character.isOnGround = true;
         this.character.y = this.groundHeightChange;
-        this.character.gravity = 0.3;
         this.character.velocityY = 0;
         this.character.jumpStartY = 0;
-        this.character.jumpHeight = this.canvas.height * 0.06;
       }
     }
     // 检测人物与平台的碰撞
@@ -319,19 +368,16 @@ export default class Instruction {
       if (
         this.character.x < plat.x + 64 &&
         this.character.x + this.character.width > plat.x &&
-        this.character.y + this.character.height <= plat.y
+        this.character.y + this.character.height <= plat.y && this.character.y + this.character.height >= plat.y - 5 && this.character.velocityY > 0
       ) {
-        if (this.character.velocityY > 0 && this.character.y + this.character.height <= plat.y) {
-          this.character.y = plat.y - this.character.height;
-          this.character.isOnGround = true;
-          this.character.gravity = 0.3;
-          this.character.velocityY = 0;
-          this.groundHeightChange = plat.y;
-          this.character.jumpStartY = 0;
-          this.character.jumpHeight = this.canvas.height * 0.12;
-          this.character.jumping = false;
-          this.character.isOnPlat = true;
-        }
+        this.character.y = plat.y - this.character.height;
+        this.character.isOnGround = true;
+        this.character.gravity = 0.3;
+        this.character.velocityY = 0;
+        this.groundHeightChange = plat.y - this.character.height;
+        this.character.jumpStartY = 0;
+        this.character.jumping = false;
+        this.character.isOnPlat = true;
       }
     }
     // 在平台上时，检测是否超出平台范围
@@ -353,20 +399,19 @@ export default class Instruction {
         this.character.jumping = true; // 使人物开始下落
         this.character.isOnGround = false;
         this.groundHeightChange = this.groundHeight;
-        // 调整下落速度和高度
-        this.character.gravity = 0.3; // 重置下落速度
-        this.character.velocityY = 0; // 重置垂直速度
         this.character.jumpStartY = this.groundHeight;
-        this.character.jumpHeight = this.canvas.height * 0.06; // 调整下落高度
-    
+
       }
     }
     // 判断是否与终点碰撞
-    if (this.character.x >= 10 && this.character.x <= 10 + this.endDoorImage.width && this.character.y >= this.groundHeight - this.canvas.height * 0.30 - this.endDoorImage.height / 2 && this.character.y <= this.groundHeight - this.canvas.height * 0.30 + 30){
+    if (this.character.x >= 10 && this.character.x <= 10 + this.endDoorImage.width && this.character.y >= this.groundHeight - this.canvas.height * 0.30 - this.endDoorImage.height / 2 && this.character.y <= this.groundHeight - this.canvas.height * 0.30 + 30) {
       this.gameWin = true;
+      soundManager.play('win');
+      wx.setStorageSync('trailNumber', 2);
+      backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
-      // this.game.switchScene(new this.game.third(this.game));
-    }else{
+      this.game.switchScene(new this.game.third(this.game));
+    } else {
       this.gameWin = false;
     }
   }
@@ -538,18 +583,28 @@ export default class Instruction {
     // 绘制返回按钮
     this.drawBack();
     // 绘制关卡显示
-    this.drawAroundNumber()
+    this.drawAroundNumber();
+    // 绘制生命数
+    this.drawLifeCount();
   }
   update() {
     // 当游戏结束时无返回值
     if (this.gameOver || this.gameWin) {
-      backgroundMusic.pauseBackgroundMusic();
-      return;
+      backgroundMusic.stopBackgroundMusic();
+      if (this.lastLifeCount == 0) {
+        // 绘制失败场景和按钮
+        if (this.failTipsImage.complete) {
+          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width) / 2, (this.canvas.height - this.failTipsImage.height) / 2 - this.failTipsImage.height / 2);
+        }
+        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40);
+        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110);
+      }
+    } else {
+      // 更新人物动态
+      this.updateCharacter();
+      // 更新冲击波
+      this.updateCycleWave();
     }
-    // 更新人物动态
-    this.updateCharacter();
-    // 更新冲击波
-    this.updateCycleWave();
   }
   // 通用返回按钮作用区
   touchHandler(e) {
@@ -561,9 +616,28 @@ export default class Instruction {
     // 点击返回按钮事件
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
+      backgroundMusic.stopBackgroundMusic();
       btn.onClick();
-      backgroundMusic.pauseBackgroundMusic();
       return
+    }
+    if (this.gameOver) {
+      if (touchX >= this.buttonStartInfo.x && touchX <= this.buttonStartInfo.x + this.buttonStartInfo.width &&
+        touchY >= this.buttonStartInfo.y && touchY <= this.buttonStartInfo.y + this.buttonStartInfo.height) {
+        this.resetGame();
+        this.stopAction();
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+        this.game.switchScene(new this.game.begin(this.game));
+      }
+      if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
+        touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {
+        wx.shareAppMessage(() => {
+          return {
+            title: '一起寻回我们曾经的美好！',
+            imageUrl: 'image/thumbnail.jpg' // 分享图片的路径
+          };
+        });
+      }
     }
   }
   touchStartHandler(e) {
@@ -694,17 +768,16 @@ export default class Instruction {
     this.angle = 0;
     this.direction = '';
     this.cycleX = 0;
-    if (this.character.y == this.groundHeight || this.character.y == this.groundHeightChange) {
+    if (this.character.y == this.groundHeight) {
       this.character.isOnGround = true;
       this.character.jumping = false;
     } else {
       this.character.isOnGround = false;
       this.character.jumping = true;
+      this.groundHeightChange = this.groundHeight;
       this.character.jumpStartY = this.groundHeightChange;
-      this.character.jumpHeight = this.canvas.height * 0.12;
     }
     this.character.isFall = false;
-    this.character.velocityY = 0;
   }
   // 跳跃的事件处理
   jumpHandler() {
@@ -712,6 +785,7 @@ export default class Instruction {
       this.character.jumping = true;
       this.character.isOnGround = false;
       this.character.jumpStartY = this.groundHeightChange;
+      this.character.gravity = 0.3;
     }
   }
   // 重置游戏
@@ -749,7 +823,66 @@ export default class Instruction {
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isFall: false, // 是否处于掉落状态
+      isOnPlat: false, // 是否处于平台
     };
+    // 向右移动时候图片集锦
+    const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
+    for (const path of framePathsRight) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightFrames.push(frame);
+    }
+    // 向左移动时候图片集锦
+    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
+    for (const path of framePathsLeft) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftFrames.push(frame);
+    }
+    // 向右移动跳动的图片集锦
+    const framePathsRightJump = ['image/rightjump1.png', 'image/rightjump2.png'];
+    for (const path of framePathsRightJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightJumpFrames.push(frame);
+    }
+    // 向左移动弹跳的图片集锦
+    const framePathsLeftJump = ['image/leftjump1.png', 'image/leftjump2.png'];
+    for (const path of framePathsLeftJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftJumpFrames.push(frame);
+    }
+    // 向右发射的图片集锦
+    const framePathsRightShot = ['image/shot1.png', 'image/shot2.png'];
+    for (const path of framePathsRightShot) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightShotFrames.push(frame);
+    }
+    // 向左发射的图片集锦
+    const framePathsLeftShot = ['image/shot3.png', 'image/shot4.png'];
+    for (const path of framePathsLeftShot) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftShotFrames.push(frame);
+    }
+    // 向右死掉的图片集锦
+    const framePathsRightDead = ['image/rightdown.png'];
+    for (const path of framePathsRightDead) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightDown.push(frame);
+    }
+    // 向左死掉的图片集锦
+    const framePathsLeftDead = ['image/leftdown.png'];
+    for (const path of framePathsLeftDead) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftDown.push(frame);
+    }
+    // 记录生命总数
+    this.lastLifeCount = null;
     // 重置冲击波数据
     this.cycleAddDistence = 0;
     this.cycleAddHeight = 0;
@@ -771,6 +904,8 @@ export default class Instruction {
     this.yardImage.src = '';
     this.endDoorImage.src = '';
     this.spikesImage.src = '';
+    this.lifeCount.src = '';
+    this.failTipsImage.src = '';
     this.platform.forEach(img => img = null);
     // 清理人物图片
     this.destroyCharacterFrames();

@@ -2,6 +2,9 @@ import {
   createBackButton,
   drawIconButton,
 } from '../../utils/button';
+import {
+  circleRectCollision
+} from '../../utils/algorithm';
 let systemInfo = wx.getSystemInfoSync();
 let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
 import SoundManager from '../../utils/soundManager';
@@ -29,6 +32,7 @@ export default class Instruction {
     this.yardImage.src = 'image/yard.jpg';
     // 陆地高度
     this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
     // 创建返回按钮
     this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
       if (this.lastLifeCount == 0){
@@ -43,7 +47,7 @@ export default class Instruction {
       width: 20,
       height: 35,
       x: 35,
-      y: this.groundHeight,
+      y: this.groundHeightChange,
       speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
@@ -62,13 +66,15 @@ export default class Instruction {
       jumpStartY: 0,
       jumpStartTime: 0,
       jumpHeight: this.canvas.height * 0.06, // 跳跃高度
-      gravity: 0.3,    // 重力
-      jumpSpeed: -10,   // 起跳初始速度
+      gravity: 0.3, // 重力
+      jumpSpeed: -10, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isFall: false, // 是否处于掉落状态
+      isOnPlat: false, // 是否处于平台
+      isMoving: false, // 是否跳上移动的平台
     };
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
@@ -135,13 +141,44 @@ export default class Instruction {
     this.angle = 0; // 冲击波旋转角度
     this.cycleX = 0; // 记录发出冲击波的初始位置
     this.direction = ''; //记录冲击波的方向
+    // 加载陷阱图片
+    this.platform = [
+      'image/rock.png',
+      'image/cave.png',
+      'image/rock.png',
+    ].map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
+    this.rockPlatformList = [{
+      x: this.canvas.width - 64,
+      y: this.groundHeight - this.canvas.height * 0.06 + 10,
+      direction: 1,
+      isMoving: false,
+    }, {
+      x: (this.canvas.width - 64) / 4,
+      y: this.groundHeight - this.canvas.height * 0.18 + 20,
+      direction: 1,
+      isMoving: true,
+    }, {
+      x: this.canvas.width - 150,
+      y: this.groundHeight - this.canvas.height * 0.30 + 30,
+      direction: 1,
+      isMoving: false,
+    }];
     // 绘制终点的图片
     this.endDoorImage = new Image();
     this.endDoorImage.src = 'image/doorbreak.png';
+    this.endDoorShow = false; // 是否显示终点
     // 绘制陷阱的图片
     this.spikesImage = new Image();
     this.spikesImage.src = 'image/spikes.png';
-    this.spikesX = this.canvas.width * 0.35;
+    this.spikesX = this.canvas.width * 0.25;
+    // 绘制丧尸的图片
+    this.basiczombie = new Image();
+    this.basiczombie.src = 'image/basiczombie.png';
+    this.basiczombieShow = true;
     // 绘制生命数显示
     this.lifeCount = new Image();
     this.lifeCount.src = 'image/head.png';
@@ -173,8 +210,8 @@ export default class Instruction {
     }
   }
   // 绘制关卡显示
-  drawAroundNumber(){
-    const number = '01';
+  drawAroundNumber() {
+    const number = '03';
     const textWidth = this.context.measureText(number).width;
     const startX = this.canvas.width - textWidth - 10;
     const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
@@ -220,64 +257,100 @@ export default class Instruction {
   }
   // 绘制游戏背景
   drawGameBackground() {
-    if(this.gameBackground.complete){
+    if (this.gameBackground.complete) {
       this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
     }
   }
   // 绘制陆地
   drawYard() {
-    if(this.yardImage.complete){
+    if (this.yardImage.complete) {
       this.context.drawImage(this.yardImage, 0, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width, this.canvas.height * 0.1)
     }
   }
   // 绘制峡谷断层
   drawCutRoad() {
     this.context.fillStyle = '#000000';
-    this.context.fillRect(this.canvas.width * 0.35, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width * 0.20, this.canvas.height * 0.1);
+    this.context.fillRect(this.canvas.width * 0.25, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width * 0.25, this.canvas.height * 0.1);
+    this.context.fillRect(this.canvas.width * 0.6, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width * 0.25, this.canvas.height * 0.1);
   }
   // 绘制陷阱针刺
   drawTraps() {
-    if (this.spikesImage.complete){
-      let inter = Math.floor(this.canvas.width * 0.20 / (this.spikesImage.width / 2))
-      for(let i = 0; i < inter; i++){
-        this.context.drawImage(this.spikesImage, this.spikesX + this.spikesImage.width / 2 * i, this.groundHeight+ this.canvas.height * 0.1, this.spikesImage.width / 2, this.spikesImage.height / 2);
+    if (this.spikesImage.complete) {
+      let inter = Math.floor(this.canvas.width * 0.25 / (this.spikesImage.width / 2))
+      for (let i = 0; i < inter; i++) {
+        this.context.drawImage(this.spikesImage, this.spikesX + this.spikesImage.width / 2 * i, this.groundHeight + this.canvas.height * 0.1, this.spikesImage.width / 2, this.spikesImage.height / 2);
+      }
+      for (let i = 0; i < inter; i++) {
+        this.context.drawImage(this.spikesImage, this.canvas.width * 0.6 + this.spikesImage.width / 2 * i, this.groundHeight + this.canvas.height * 0.1, this.spikesImage.width / 2, this.spikesImage.height / 2);
       }
     }
   }
+  // 绘制岩石平台
+  drawRockPlatform() {
+    this.platform.forEach((element, index) => {
+      if (element.complete) {
+        this.context.drawImage(element, this.rockPlatformList[index].x, this.rockPlatformList[index].y, element.width / 2, element.height / 2);
+      }
+    })
+  }
+  // 在函数中更新平台的位置
+  updateRockPlatform(){
+    const platformSpeed = 0.5;  // 平台移动速度
+    for (const platform of this.rockPlatformList.slice(1,2)) {
+      // 根据方向更新平台的位置
+      platform.x += platformSpeed * platform.direction;
+      if (this.character.isOnPlat && this.character.isMoving) {
+        // 如果人物在平台上，随着平台移动
+        this.character.x += platformSpeed * platform.direction;
+      }
+      // 检查是否达到边界，如果是，改变方向
+      if (platform.x + 64 >= (this.canvas.width - 64) / 4 + 64) {
+        platform.direction = -1;
+      } else if (platform.x <= 10) {
+        platform.direction = 1;
+      }
+    }
+  }
+  // 绘制僵尸
+  drawZombie(){
+    if(this.basiczombie.complete && this.basiczombieShow){
+      this.context.drawImage(this.basiczombie, this.canvas.width - 150 + this.basiczombie.width / 2, this.groundHeight - this.canvas.height * 0.30 + 30 - this.basiczombie.height / 2, this.basiczombie.width / 2, this.basiczombie.height / 2)
+    }
+  }
   // 绘制终点
-  drawEndDoor(){
-    if(this.endDoorImage.complete){
-      this.context.drawImage(this.endDoorImage, this.canvas.width - this.endDoorImage.width, this.groundHeight - this.endDoorImage.height / 2, this.endDoorImage.width, this.endDoorImage.height)
+  drawEndDoor() {
+    if (this.endDoorImage.complete && this.endDoorShow) {
+      this.context.drawImage(this.endDoorImage, this.canvas.width - 150, this.groundHeight - this.canvas.height * 0.30 - this.endDoorImage.height / 2, this.endDoorImage.width, this.endDoorImage.height)
     }
   }
   // 绘制人物
   drawCharacter() {
     let characterImg;
-    if(this.character.theLastAction == 'right' || this.character.theLastAction == ''){
-      if (this.character.isShot){
+    if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
+      if (this.character.isShot) {
         characterImg = this.character.rightShotFrames[this.character.currentRightShotIndex]
-      }else{
-        if(this.character.isOnGround){
+      } else {
+        if (this.character.isOnGround) {
           characterImg = this.character.rightFrames[this.character.currentRightFrameIndex];
-        }else{
-          if (this.gameOver){
+        } else {
+          if (this.gameOver) {
             characterImg = this.character.rightDown[0];
-          }else{
+          } else {
             characterImg = this.character.gravity > 0 ? this.character.rightJumpFrames[0] : this.character.rightJumpFrames[1];
           }
         }
       }
       this.context.drawImage(characterImg, this.character.x, this.character.y, characterImg.width / 2, characterImg.height / 2);
-    }else if(this.character.theLastAction == 'left'){
-      if (this.character.isShot){
+    } else if (this.character.theLastAction == 'left') {
+      if (this.character.isShot) {
         characterImg = this.character.leftShotFrames[this.character.currentLeftShotIndex]
-      }else{
-        if(this.character.isOnGround){
+      } else {
+        if (this.character.isOnGround) {
           characterImg = this.character.leftFrames[this.character.currentLeftFrameIndex];
-        }else{
-          if (this.gameOver){
+        } else {
+          if (this.gameOver) {
             characterImg = this.character.leftDown[0];
-          }else{
+          } else {
             characterImg = this.character.gravity > 0 ? this.character.leftJumpFrames[0] : this.character.leftJumpFrames[1];
           }
         }
@@ -287,37 +360,19 @@ export default class Instruction {
   }
   // 更新绘制人物
   updateCharacter() {
-    // 记录人物之前的位置
-    if(this.pressingDirection == 'right' && !this.character.isFall){
+    if (this.pressingDirection == 'right' && !this.character.isFall) {
       this.moveRightCharacter();
-    }else if(this.pressingDirection == 'left' && !this.character.isFall){
+    } else if (this.pressingDirection == 'left' && !this.character.isFall) {
       this.moveLeftCharacter();
     }
-    // 判断是否处于跳跃
-    if (this.character.jumping) {
-      if (this.groundHeight - this.character.y > this.character.jumpHeight) {
-        this.character.gravity = -0.3;
-      }
-      this.character.velocityY -= this.character.gravity;
-      this.character.y += this.character.velocityY;
-      // 如果达到地面，结束跳跃
-      if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
-        this.character.jumping = false;
-        this.character.isOnGround = true;
-        this.character.y = this.groundHeight;
-        this.character.velocityY = 0;
-        this.character.jumpStartY = 0;
-        this.character.jumpHeight = this.canvas.height * 0.06;
-      }
-    }
     // 判断是否和断崖进行碰撞检测
-    if (this.character.x + 10 >= this.canvas.width * 0.35 && this.character.x + 10 <= this.canvas.width * 0.55 &&this.character.y >= this.groundHeight){
+    if ((this.character.x + 10 >= this.canvas.width * 0.25 && this.character.x + 10 <= this.canvas.width * 0.50 && this.character.y >= this.groundHeight) || (this.character.x + 10 >= this.canvas.width * 0.6 && this.character.x + 10 <= this.canvas.width * 0.85 && this.character.y >= this.groundHeight)) {
       this.character.isFall = true;
       this.character.isOnGround = false;
       this.character.gravity = -0.3;
       this.character.velocityY -= this.character.gravity;
       this.character.y += this.character.velocityY;
-      if (this.character.y >= menuButtonInfo.bottom + this.canvas.height * 0.6 - 29){
+      if (this.character.y >= menuButtonInfo.bottom + this.canvas.height * 0.6 - 29) {
         this.character.y = menuButtonInfo.bottom + this.canvas.height * 0.6 - 29;
         this.gameOver = true;
         soundManager.play('crack');
@@ -335,23 +390,97 @@ export default class Instruction {
         }
       }
     }
+    // 判断是否处于跳跃
+    if (this.character.jumping) {
+      if (this.groundHeightChange - this.character.y > this.character.jumpHeight) {
+        this.character.gravity = -0.3;
+      }
+      this.character.velocityY -= this.character.gravity;
+      this.character.y += this.character.velocityY;
+      // 如果达到地面，结束跳跃
+      if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
+        this.character.jumping = false;
+        this.character.isOnGround = true;
+        this.character.y = this.groundHeightChange;
+        this.character.gravity = 0.3;
+        this.character.velocityY = 0;
+        this.character.jumpStartY = 0;
+      }
+    }
+    // 检测人物与平台的碰撞
+    for (const plat of this.rockPlatformList) {
+      if (
+        this.character.x < plat.x + 64 &&
+        this.character.x + this.character.width > plat.x &&
+        this.character.y + this.character.height <= plat.y && this.character.y + this.character.height >= plat.y - 5 && this.character.velocityY > 0
+      ) {
+        this.character.y = plat.y - this.character.height;
+        this.character.isOnGround = true;
+        this.character.gravity = 0.3;
+        this.character.velocityY = 0;
+        this.groundHeightChange = plat.y - this.character.height;
+        this.character.jumpStartY = 0;
+        this.character.jumping = false;
+        this.character.isOnPlat = true;
+        this.character.isMoving = plat.isMoving
+      }
+    }
+    // 在平台上时，检测是否超出平台范围
+    if (this.character.isOnPlat) {
+      let onAnyPlatform = false;
+      for (const plat of this.rockPlatformList) {
+        if (
+          this.character.x < plat.x + 64 &&
+          this.character.x + this.character.width > plat.x &&
+          this.character.y + this.character.height <= plat.y
+        ) {
+          onAnyPlatform = true;
+          break;
+        }
+      }
+      // 如果不在任何平台上，让人物下落
+      if (!onAnyPlatform) {
+        this.character.isOnPlat = false;
+        this.character.jumping = true; // 使人物开始下落
+        this.character.isOnGround = false;
+        this.groundHeightChange = this.groundHeight;
+        this.character.jumpStartY = this.groundHeight;
+      }
+    }
+    // 判断是否和丧尸进行了碰撞
+    if(this.character.x < this.canvas.width - 150 + this.basiczombie.width && this.character.x + this.character.width > this.canvas.width - 150 + this.basiczombie.width / 2 && this.character.y < this.groundHeight - this.canvas.height * 0.30 + 30 && this.character.y + this.character.height > this.groundHeight - this.canvas.height * 0.30 + 30 - this.basiczombie.height / 2 && this.basiczombieShow){
+      this.gameOver = true;
+      soundManager.play('crack');
+      soundManager.play('lose', 200);
+      this.lastLifeCount--
+      if(this.lastLifeCount < 0){
+        this.lastLifeCount = 0;
+      }
+      wx.setStorageSync('lifeCount', this.lastLifeCount)
+      if (this.lastLifeCount == 0){
+        this.stopAction();
+      }else{
+        this.resetGame();
+        this.stopAction();
+      }
+    }
     // 判断是否与终点碰撞
-    if (this.character.x >= this.canvas.width - this.endDoorImage.width && this.character.x <= this.canvas.width && this.character.y >= this.groundHeight - this.endDoorImage.height / 2 && this.character.y <= this.groundHeight + this.endDoorImage.height / 2){
+    if (this.character.x >= this.canvas.width - 150 && this.character.x <= this.canvas.width - 150 + this.endDoorImage.width && this.character.y >= this.groundHeight - this.canvas.height * 0.30 - this.endDoorImage.height / 2 && this.character.y <= this.groundHeight - this.canvas.height * 0.30 + 30 && this.endDoorShow){
       this.gameWin = true;
       soundManager.play('win');
+      wx.setStorageSync('trailNumber', 3);
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
-      wx.setStorageSync('trailNumber', 1)
-      this.game.switchScene(new this.game.second(this.game));
+      this.game.switchScene(new this.game.fourth(this.game));
     }else{
       this.gameWin = false;
     }
   }
   // 绘制冲击波
   drawCycleWave() {
-    if (this.character.shotWave){
-      if(this.direction == 'right'){
-        if(this.cycleImage.complete){
+    if (this.character.shotWave) {
+      if (this.direction == 'right') {
+        if (this.cycleImage.complete) {
           this.context.save();
           this.context.translate(this.cycleX + 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
           this.context.rotate(this.angle);
@@ -360,8 +489,8 @@ export default class Instruction {
           // 增加角度以实现旋转
           this.angle += 0.05;
         }
-      }else if(this.direction == 'left'){
-        if(this.cycleImage.complete){
+      } else if (this.direction == 'left') {
+        if (this.cycleImage.complete) {
           this.context.save();
           this.context.translate(this.cycleX - 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
           this.context.rotate(this.angle);
@@ -374,26 +503,49 @@ export default class Instruction {
     }
   }
   // 更新冲击波
-  updateCycleWave(){
-    if (this.character.shotWave){
-      if(this.direction == 'right'){
-        if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20){
+  updateCycleWave() {
+    if (this.character.shotWave) {
+      if (this.direction == 'right') {
+        if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20) {
           this.character.shotWave = false;
           this.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
-        }else{
+        } else {
           this.cycleAddDistence += this.cycleSpeed;
         }
-      }else if(this.direction == 'left'){
-        if (this.cycleX + this.cycleAddDistence <= 20){
+      } else if (this.direction == 'left') {
+        if (this.cycleX + this.cycleAddDistence <= 20) {
           this.character.shotWave = false;
           this.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
-        }else{
+        } else {
           this.cycleAddDistence -= this.cycleSpeed;
         }
+      }
+      // 判断冲击波是否与僵尸碰撞
+      let circleWave = {
+        x: this.cycleX + this.cycleAddDistence,
+        y: this.cycleAddHeight,
+        radius: 8
+      }
+      let rectZombie = {
+        x: this.canvas.width - 150 + this.basiczombie.width / 2,
+        y: this.groundHeight - this.canvas.height * 0.30 + 30 - this.basiczombie.height / 2 - 16,
+        width: this.basiczombie.width / 2,
+        height: this.basiczombie.height / 2,
+      }
+      if (circleRectCollision(circleWave,rectZombie) && this.basiczombieShow){
+        this.character.shotWave = false;
+        this.basiczombieShow = false;
+        this.cycleAddDistence = 0;
+        this.cycleAddHeight = 0;
+        this.angle = 0;
+        this.cycleX = 0;
+        this.direction = '';
+        this.endDoorShow = true;
+        soundManager.play('splendid');
       }
     }
   }
@@ -504,10 +656,14 @@ export default class Instruction {
     this.drawCutRoad();
     // 绘制陷阱
     this.drawTraps();
+    // 绘制岩石平台
+    this.drawRockPlatform();
     // 绘制终点
     this.drawEndDoor();
     // 绘制人物
     this.drawCharacter();
+    // 绘制僵尸
+    this.drawZombie();
     // 绘制冲击波
     this.drawCycleWave();
     // 绘制返回按钮
@@ -519,7 +675,7 @@ export default class Instruction {
   }
   update() {
     // 当游戏结束时无返回值
-    if (this.gameOver || this.gameWin){
+    if (this.gameOver || this.gameWin) {
       backgroundMusic.stopBackgroundMusic();
       if(this.lastLifeCount == 0){
         // 绘制失败场景和按钮
@@ -534,10 +690,12 @@ export default class Instruction {
       this.updateCharacter();
       // 更新冲击波
       this.updateCycleWave();
+      // 在函数中更新平台的位置
+      this.updateRockPlatform()
     }
   }
   // 通用返回按钮作用区
-  touchHandler(e){
+  touchHandler(e) {
     const touch = e.touches[0];
     const canvasRect = this.canvas.getBoundingClientRect();
     const touchX = touch.clientX - canvasRect.left;
@@ -557,6 +715,7 @@ export default class Instruction {
         this.stopAction();
         wx.setStorageSync('lifeCount', 2);
         wx.setStorageSync('trailNumber', '')
+        this.game.switchScene(new this.game.begin(this.game));
       }
       if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
         touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {
@@ -581,7 +740,7 @@ export default class Instruction {
     const padSize = joystickSize * 0.6;
     const buttonSize = padSize * 1;
     // 当游戏结束时无返回值
-    if (this.gameOver || this.gameWin){
+    if (this.gameOver || this.gameWin) {
       return;
     }
     // 判断点击位置是否在方向键上
@@ -616,79 +775,79 @@ export default class Instruction {
       this.moveRightCharacter();
     } else if (
       touchX >= menuButtonInfo.right - buttonSize * 2.5 && touchX <= menuButtonInfo.right - buttonSize * 2.5 + buttonSize &&
-      touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3/2) {
+      touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3 / 2) {
       // 发射
       this.character.isShot = true;
-      if (!this.character.shotWave){
+      if (!this.character.shotWave) {
         this.toShot();
         soundManager.play('throw');
-      }else{
+      } else {
         // 第二次按下后瞬移到冲击波所在位置
         this.toWave();
         soundManager.play('move');
       }
-    }else if (
+    } else if (
       touchX >= menuButtonInfo.right - buttonSize && touchX <= menuButtonInfo.right &&
-      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2 &&!this.character.isFall) {
+      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2 && !this.character.isFall) {
       // 跳跃
       this.jumpHandler();
       soundManager.play('jump');
     }
   }
   touchEndHandler(e) {
-    if(this.character.isShot){
+    if (this.character.isShot) {
       this.character.currentRightShotIndex = 0;
       this.character.currentLeftShotIndex = 0;
       this.character.isShot = false;
     }
   }
   // 停止行为
-  stopAction(){
+  stopAction() {
     if (this.pressingDirection == 'right') {
       this.character.currentRightFrameIndex = 0;
       this.pressingDirection = null; // 清空按键方向
-    }else if(this.pressingDirection == 'left'){
+    } else if (this.pressingDirection == 'left') {
       this.character.currentLeftFrameIndex = 0;
       this.pressingDirection = null; // 清空按键方向
     }
   }
   // 向右移动动作
-  moveRightCharacter(){
+  moveRightCharacter() {
     this.character.x += this.character.speed;
-    if (this.character.x >= this.canvas.width - 20){
+    if (this.character.x >= this.canvas.width - 20) {
       this.character.x = this.canvas.width - 20
     }
     this.character.currentRightFrameIndex = (this.character.currentRightFrameIndex + 1) % this.character.rightFrames.length;
   }
   // 向左移动动作
-  moveLeftCharacter(){
+  moveLeftCharacter() {
     this.character.x -= this.character.speed;
-    if (this.character.x <= 0){
+    if (this.character.x <= 0) {
       this.character.x = 0
     }
     this.character.currentLeftFrameIndex = (this.character.currentLeftFrameIndex + 1) % this.character.leftFrames.length;
   }
   // 发射的事件处理
-  toShot(){
-    if(this.character.isShot){
+  toShot() {
+    if (this.character.isShot) {
       this.character.currentRightShotIndex = (this.character.currentRightShotIndex + 1) % this.character.rightShotFrames.length;
       this.character.currentLeftShotIndex = (this.character.currentLeftShotIndex + 1) % this.character.leftShotFrames.length;
       this.character.shotWave = true;
       this.cycleAddHeight = this.character.y;
-      if (this.character.theLastAction == 'right' || this.character.theLastAction == ''){
+      if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
         this.cycleX = this.character.x;
         this.direction = 'right';
-      }else if(this.character.theLastAction == 'left'){
+      } else if (this.character.theLastAction == 'left') {
         this.cycleX = this.character.x + 18;
         this.direction = 'left';
       }
     }
   }
   // 瞬移的事件处理
-  toWave(){
-    if (this.character.theLastAction == 'left'){
+  toWave() {
+    if (this.character.theLastAction == 'left') {
       this.character.x = this.cycleX - 24 + this.cycleAddDistence;
-    }else if(this.character.theLastAction == 'right' || this.character.theLastAction == ''){
+    } else if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
       this.character.x = this.cycleX + this.cycleAddDistence;
     }
     this.character.y = this.cycleAddHeight
@@ -697,35 +856,35 @@ export default class Instruction {
     this.angle = 0;
     this.direction = '';
     this.cycleX = 0;
-    if(this.character.y == this.groundHeight){
+    if (this.character.y == this.groundHeight) {
       this.character.isOnGround = true;
       this.character.jumping = false;
-    }else{
+    } else {
       this.character.isOnGround = false;
       this.character.jumping = true;
-      this.character.jumpStartY = this.groundHeight;
-      this.character.jumpHeight = this.groundHeight - this.cycleAddHeight;
+      this.groundHeightChange = this.groundHeight;
+      this.character.jumpStartY = this.groundHeightChange;
     }
     this.character.isFall = false;
   }
   // 跳跃的事件处理
-  jumpHandler(){
-    if(!this.character.jumping){
+  jumpHandler() {
+    if (!this.character.jumping) {
       this.character.jumping = true;
       this.character.isOnGround = false;
-      this.character.jumpStartY = this.character.y;
-      this.character.gravity = 0.3;
+      this.character.jumpStartY = this.groundHeightChange;
     }
   }
   // 重置游戏
   resetGame() {
     backgroundMusic.playBackgroundMusic();
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
     // 绘制人物
     this.character = {
       width: 20,
       height: 35,
       x: 35,
-      y: this.groundHeight,
+      y: this.groundHeightChange,
       speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
@@ -744,14 +903,32 @@ export default class Instruction {
       jumpStartY: 0,
       jumpStartTime: 0,
       jumpHeight: this.canvas.height * 0.06, // 跳跃高度
-      gravity: 0.3,    // 重力
-      jumpSpeed: -10,   // 起跳初始速度
+      gravity: 0.3, // 重力
+      jumpSpeed: -10, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isFall: false, // 是否处于掉落状态
+      isOnPlat: false, // 是否处于平台
+      isMoving: false,
     };
+    this.rockPlatformList = [{
+      x: this.canvas.width - 64,
+      y: this.groundHeight - this.canvas.height * 0.06 + 10,
+      direction: 1,
+      isMoving: false,
+    }, {
+      x: (this.canvas.width - 64) / 4,
+      y: this.groundHeight - this.canvas.height * 0.18 + 20,
+      direction: 1,
+      isMoving: true,
+    }, {
+      x: this.canvas.width - 150,
+      y: this.groundHeight - this.canvas.height * 0.30 + 30,
+      direction: 1,
+      isMoving: false,
+    }];
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
     for (const path of framePathsRight) {
@@ -808,6 +985,7 @@ export default class Instruction {
       frame.src = path;
       this.character.leftDown.push(frame);
     }
+    this.endDoorShow = false;
     // 记录生命总数
     this.lastLifeCount = null;
     // 重置冲击波数据
@@ -816,7 +994,8 @@ export default class Instruction {
     this.angle = 0; // 冲击波旋转角度
     this.cycleX = 0; // 记录发出冲击波的初始位置
     this.direction = ''; // 记录冲击波方向
-    this.spikesX = this.canvas.width * 0.35;
+    this.spikesX = this.canvas.width * 0.25;
+    this.basiczombieShow = true;
     this.gameOver = false; // 记录游戏是否结束
     this.gameWin = false;
   }
@@ -831,8 +1010,10 @@ export default class Instruction {
     this.yardImage.src = '';
     this.endDoorImage.src = '';
     this.spikesImage.src = '';
+    this.basiczombie.src =  '';
     this.lifeCount.src = '';
     this.failTipsImage.src = '';
+    this.platform.forEach(img => img = null);
     // 清理人物图片
     this.destroyCharacterFrames();
   }
