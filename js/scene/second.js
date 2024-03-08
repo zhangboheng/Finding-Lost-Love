@@ -366,7 +366,7 @@ export default class Instruction {
     // 检测人物与平台的碰撞
     for (const plat of this.rockPlatformList) {
       if (
-        this.character.x < plat.x + 64 &&
+        this.character.x < plat.x + 54 &&
         this.character.x + this.character.width > plat.x &&
         this.character.y + this.character.height <= plat.y && this.character.y + this.character.height >= plat.y - 5 && this.character.velocityY > 0
       ) {
@@ -385,7 +385,7 @@ export default class Instruction {
       let onAnyPlatform = false;
       for (const plat of this.rockPlatformList) {
         if (
-          this.character.x < plat.x + 64 &&
+          this.character.x < plat.x + 54 &&
           this.character.x + this.character.width > plat.x &&
           this.character.y + this.character.height <= plat.y
         ) {

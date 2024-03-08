@@ -74,6 +74,8 @@ export default class Scene1 {
         this.game.switchScene(new this.game.fourth(this.game));
       }else if(getTrailGame == 4){
         this.game.switchScene(new this.game.fifth(this.game));
+      }else if(getTrailGame == 5){
+        this.game.switchScene(new this.game.sixth(this.game));
       }else{
         this.game.switchScene(new this.game.begin(this.game));
       }
