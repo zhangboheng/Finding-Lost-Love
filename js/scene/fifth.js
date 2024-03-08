@@ -530,7 +530,7 @@ export default class Instruction {
       wx.setStorageSync('trailNumber', 5);
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
-      this.game.switchScene(new this.game.begin(this.game));
+      this.game.switchScene(new this.game.sixth(this.game));
     }else{
       this.gameWin = false;
     }

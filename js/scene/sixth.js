@@ -168,15 +168,18 @@ export default class Instruction {
     this.endDoorTrueImage.src = 'image/doorbreakbubble.png';
     // 终点的状态
     this.endDoorStatue = {
-      x:this.canvas.width * 0.35,
-      y:this.groundHeight - this.canvas.height * 0.25 + 30,
+      x: this.canvas.width * 0.35,
+      y: this.groundHeight - this.canvas.height * 0.25 + 30,
       width: 64,
       height: 64,
       velocityY: 0,
       gravity: 0.3,
       endDoorShow: true, // 是否显示终点
       isBreak: false, // 判断是否泡沫破裂
-      breakSound: false // 判断是否显示泡沫破裂的声音
+      breakSound: false, // 判断是否显示泡沫破裂的声音
+      follow: false, // 判断是否落地跟随主角的移动
+      distence: 0, // 判断增加或者减少的距离
+      lastCharacterX: 0 // 记录最后掉落时 X 的距离
     }
     // 绘制陷阱的图片
     this.spikesImage = new Image();
@@ -326,9 +329,9 @@ export default class Instruction {
     })
   }
   // 在函数中更新平台的位置
-  updateRockPlatform(){
-    const platformSpeed = 0.5;  // 平台移动速度
-    if (this.gearStatue == 'right'){
+  updateRockPlatform() {
+    const platformSpeed = 0.5; // 平台移动速度
+    if (this.gearStatue == 'right') {
       for (const platform of this.rockPlatformList) {
         // 根据方向更新平台的位置
         platform.x += platformSpeed * platform.direction;
@@ -350,51 +353,64 @@ export default class Instruction {
     }
   }
   // 绘制机关
-  drawGear(){
-    if(this.gearStatue == 'left'){
-      if (this.leftGear.complete){
+  drawGear() {
+    if (this.gearStatue == 'left') {
+      if (this.leftGear.complete) {
         this.context.drawImage(this.leftGear, (this.canvas.width - this.leftGear.width) * 2 + this.yardX - this.leftGear.width, this.groundHeight, this.leftGear.width, this.leftGear.height);
       }
-    }else{
-      if (this.rightGear.complete){
+    } else {
+      if (this.rightGear.complete) {
         this.context.drawImage(this.rightGear, (this.canvas.width - this.rightGear.width) * 2 + this.yardX - this.rightGear.width, this.groundHeight, this.rightGear.width, this.rightGear.height);
       }
     }
   }
   // 绘制终点
   drawEndDoor() {
-    if (this.endDoorStatue.endDoorShow){
-      if (this.endDoorStatue.isBreak){
+    if (this.endDoorStatue.endDoorShow) {
+      if (this.endDoorStatue.isBreak) {
         if (this.endDoorImage.complete) {
-          this.context.drawImage(this.endDoorImage, this.endDoorStatue.x + this.yardX, this.endDoorStatue.y - this.endDoorImage.height, this.endDoorImage.width, this.endDoorImage.height)
+          this.context.drawImage(this.endDoorImage, this.endDoorStatue.x + this.endDoorStatue.distence, this.endDoorStatue.y - this.endDoorImage.height, this.endDoorImage.width, this.endDoorImage.height)
         }
-      }else{
+      } else {
         if (this.endDoorTrueImage.complete) {
-          this.context.drawImage(this.endDoorTrueImage, this.endDoorStatue.x, this.endDoorStatue.y - this.endDoorImage.height, this.endDoorTrueImage.width, this.endDoorTrueImage.height)
+          this.context.drawImage(this.endDoorTrueImage, this.endDoorStatue.x + this.endDoorStatue.distence, this.endDoorStatue.y - this.endDoorImage.height, this.endDoorTrueImage.width, this.endDoorTrueImage.height)
         }
       }
     }
   }
   // 更新终点位置
-  updateEndDoor(){
+  updateEndDoor() {
     let upOrDown = 0;
-    if (this.endDoorStatue.x >= this.yardX + this.canvas.width * 0.35 && this.endDoorStatue.x + this.endDoorImage.width <= this.yardX + this.canvas.width * 0.55){
+    if (this.endDoorStatue.x >= this.yardX + this.canvas.width * 0.35 - 10 && this.endDoorStatue.x + this.endDoorImage.width <= this.yardX + this.canvas.width * 0.55 + 10) {
       upOrDown = this.groundHeight + this.endDoorImage.height;
-    }else{
+    } else {
       upOrDown = this.groundHeight + this.endDoorImage.height / 2;
     }
     // 如果平台撤离的位置不足以支撑镜子则镜子下落
-    if (this.gearStatue == 'right' && this.rockPlatformList[0].x + 56<= this.endDoorStatue.x && this.endDoorStatue.y <= upOrDown){
+    if (this.gearStatue == 'right' && this.rockPlatformList[0].x + 56 <= this.endDoorStatue.x && this.endDoorStatue.y <= upOrDown && !this.endDoorStatue.follow) {
       this.endDoorStatue.velocityY += this.endDoorStatue.gravity;
       this.endDoorStatue.y += this.endDoorStatue.velocityY;
+      // 当落地后跟随人物的 x 变化而变化
+      if (this.endDoorStatue.y > upOrDown) {
+        this.endDoorStatue.follow = true;
+        if (this.character.x <= 35){
+          this.endDoorStatue.lastCharacterX = 35
+        }else{
+          this.endDoorStatue.lastCharacterX = this.character.x;
+        }
+      }
     }
     // 针刺和镜子的碰撞检测
-    if (this.endDoorStatue.y > this.groundHeight + 60){
+    if (this.endDoorStatue.y > this.groundHeight + 60) {
       this.endDoorStatue.isBreak = true;
-      if (!this.endDoorStatue.breakSound){
+      if (!this.endDoorStatue.breakSound) {
         soundManager.play('crack');
         this.endDoorStatue.breakSound = true;
       }
+    }
+    // 当落地后跟随人物的 x 变化而变化
+    if (this.endDoorStatue.follow && this.character.x >= 35) {
+      this.endDoorStatue.distence = -this.character.x + this.endDoorStatue.lastCharacterX;
     }
   }
   // 绘制人物
@@ -483,22 +499,22 @@ export default class Instruction {
       }
     }
     // 判断是否与机关碰撞
-    if (this.character.x + this.character.width <= (this.canvas.width - this.leftGear.width) * 2 + this.yardX && this.character.x >= (this.canvas.width - this.leftGear.width) * 2 + this.yardX - this.leftGear.width && this.character.y + this.character.height >= this.groundHeight && this.character.y <= this.groundHeight + this.leftGear.height){
+    if (this.character.x + this.character.width <= (this.canvas.width - this.leftGear.width) * 2 + this.yardX && this.character.x >= (this.canvas.width - this.leftGear.width) * 2 + this.yardX - this.leftGear.width && this.character.y + this.character.height >= this.groundHeight && this.character.y <= this.groundHeight + this.leftGear.height) {
       this.gearStatue = 'right';
-      if (!this.gearSound){
+      if (!this.gearSound) {
         soundManager.play('gear');
         this.gearSound = true;
       }
     }
     // 判断是否与终点碰撞
-    if (this.character.x < this.endDoorStatue.x + this.endDoorTrueImage.width + this.yardX && this.character.x + this.character.width > this.endDoorStatue.x + this.yardX && this.character.y < this.endDoorStatue.y + this.endDoorTrueImage.height / 2 && this.character.y + this.character.height > this.endDoorStatue.y && this.endDoorStatue.isBreak){
+    if (this.character.x < this.endDoorStatue.x + this.endDoorTrueImage.width + this.endDoorStatue.distence && this.character.x + this.character.width > this.endDoorStatue.x + this.endDoorStatue.distence && this.character.y < this.endDoorStatue.y + this.endDoorTrueImage.height / 2 && this.character.y + this.character.height > this.endDoorStatue.y && this.endDoorStatue.isBreak) {
       this.gameWin = true;
       soundManager.play('win');
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 6)
       this.game.switchScene(new this.game.begin(this.game));
-    }else{
+    } else {
       this.gameWin = false;
     }
   }
@@ -902,15 +918,18 @@ export default class Instruction {
     this.backgroundImages[1].image.src = 'image/backgroundmirror.jpg';
     // 终点的状态
     this.endDoorStatue = {
-      x:this.canvas.width * 0.35,
-      y:this.groundHeight - this.canvas.height * 0.25 + 30,
+      x: this.canvas.width * 0.35,
+      y: this.groundHeight - this.canvas.height * 0.25 + 30,
       width: 64,
       height: 64,
       velocityY: 0,
       gravity: 0.3,
       endDoorShow: true, // 是否显示终点
       isBreak: false, // 判断是否泡沫破裂
-      breakSound: false // 判断是否显示泡沫破裂的声音
+      breakSound: false, // 判断是否显示泡沫破裂的声音
+      follow: false, // 判断是否落地跟随主角的移动
+      distence: 0, // 判断增加或者减少的距离
+      lastCharacterX: 0 // 记录最后掉落时 X 的距离
     }
     // 绘制人物
     this.character = {
