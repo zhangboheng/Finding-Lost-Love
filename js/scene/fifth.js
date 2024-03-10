@@ -204,7 +204,7 @@ export default class Instruction {
     this.clockDown = new Image();
     this.clockDown.src = 'image/clock.png';
     // 记录倒计时时间
-    this.clockDownTime = 60;
+    this.clockDownTime = 90;
     // 只运行一次
     this.runLimit = 1;
     // 添加触摸事件监听
@@ -1127,7 +1127,7 @@ export default class Instruction {
     // 记录生命总数
     this.lastLifeCount = null;
     // 记录倒计时时间
-    this.clockDownTime = 60;
+    this.clockDownTime = 90;
     // 只运行一次
     this.runLimit = 1;
     // 判断机关状态
