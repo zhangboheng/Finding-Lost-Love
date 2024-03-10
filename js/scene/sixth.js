@@ -200,6 +200,13 @@ export default class Instruction {
     this.lifeCount.src = 'image/head.png';
     // 记录生命总数
     this.lastLifeCount = null;
+    // 绘制倒计时图片显示
+    this.clockDown = new Image();
+    this.clockDown.src = 'image/clock.png';
+    // 记录倒计时时间
+    this.clockDownTime = 60;
+    // 只运行一次
+    this.runLimit = 1;
     // 添加触摸事件监听
     wx.onTouchStart(this.touchStartHandler.bind(this));
     wx.onTouchEnd(this.touchEndHandler.bind(this));
@@ -212,7 +219,9 @@ export default class Instruction {
     this.buttonShareInfo = "";
     // 加载失败图片
     this.failTipsImage = new Image();
-    this.failTipsImage.src = 'image/gameovertips.png'
+    this.failTipsImage.src = 'image/gameovertips.png';
+    this.context.font = '20px Arial';
+    this.clearSetInterval = '';
   }
   // 绘制背景
   drawBackground() {
@@ -232,11 +241,37 @@ export default class Instruction {
     const startX = this.canvas.width - textWidth - 10;
     const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
     // 绘制分数
+    this.context.save();
     this.context.fillStyle = '#ffffff99';
-    this.context.font = '20px Arial'; // 确保设置的字体与绘制时相同
     this.context.textAlign = 'left'; // 文本左对齐
     this.context.textBaseline = 'middle';
     this.context.fillText(number, startX, scoreY);
+    this.context.restore();
+  }
+  // 绘制倒计时
+  startCountdown() {
+    const iconSize = 24; // 图标大小
+    const iconPadding = 10; // 图标与分数之间的间距
+    // 计算分数文本的宽度
+    const textWidth = this.context.measureText(this.clockDownTime.toString().padStart(2, '0')).width;
+    // 计算总宽度（图标宽度 + 间距 + 文本宽度）
+    const totalWidth = iconSize + iconPadding + textWidth;
+    // 计算起始 x 坐标，使图标和分数组合居中
+    const startX = (this.canvas.width - totalWidth) / 2;
+    const iconX = startX;
+    const clockDownX = iconX + iconSize + iconPadding;
+    const iconY = menuButtonInfo.top + 6; // 图标的y坐标
+    const clockDownY = menuButtonInfo.top + 20; // 分数的y坐标
+    // 绘制图标
+    if (this.clockDown.complete) {
+      this.context.drawImage(this.clockDown, iconX, iconY, iconSize, iconSize);
+    }
+    this.context.save();
+    this.context.fillStyle = '#ffffff99';
+    this.context.textAlign = 'left'; // 文本左对齐
+    this.context.textBaseline = 'middle';
+    this.context.fillText(`${this.clockDownTime.toString().padStart(2, '0')}`, clockDownX, clockDownY);
+    this.context.restore();
   }
   // 绘制生命数
   drawLifeCount() {
@@ -244,8 +279,6 @@ export default class Instruction {
     this.lastLifeCount = wx.getStorageSync('lifeCount');
     const iconSize = 32; // 图标大小
     const iconPadding = 10; // 图标与分数之间的间距
-    // 计算分数文本的宽度
-    this.context.font = '20px Arial'; // 确保设置的字体与绘制时相同
     const startX = 10;
     const iconX = startX;
     const scoreX = iconX + iconSize + iconPadding;
@@ -255,11 +288,12 @@ export default class Instruction {
     if (this.lifeCount.complete) {
       this.context.drawImage(this.lifeCount, iconX, iconY, iconSize, iconSize);
     }
-    // 绘制分数
+    this.context.save();
     this.context.fillStyle = '#ffffff99';
     this.context.textAlign = 'left'; // 文本左对齐
     this.context.textBaseline = 'middle';
     this.context.fillText(`X${this.lastLifeCount}`, scoreX, scoreY);
+    this.context.restore();
   }
   // 绘制游戏活动区域
   drawActionZone() {
@@ -393,9 +427,9 @@ export default class Instruction {
       // 当落地后跟随人物的 x 变化而变化
       if (this.endDoorStatue.y > upOrDown) {
         this.endDoorStatue.follow = true;
-        if (this.character.x <= 35){
+        if (this.character.x <= 35) {
           this.endDoorStatue.lastCharacterX = 35
-        }else{
+        } else {
           this.endDoorStatue.lastCharacterX = this.character.x;
         }
       }
@@ -482,6 +516,7 @@ export default class Instruction {
       this.character.y += this.character.velocityY;
       if (this.character.y >= menuButtonInfo.bottom + this.canvas.height * 0.5 + 31) {
         this.character.y = menuButtonInfo.bottom + this.canvas.height * 0.5 + 31;
+        clearInterval(this.clearSetInterval);
         this.gameOver = true;
         soundManager.play('crack');
         soundManager.play('lose', 200);
@@ -691,6 +726,8 @@ export default class Instruction {
     this.drawAroundNumber();
     // 绘制生命数
     this.drawLifeCount();
+    // 绘制倒计时
+    this.startCountdown();
   }
   update() {
     // 当游戏结束时无返回值
@@ -705,6 +742,7 @@ export default class Instruction {
         this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110);
       }
     } else {
+      let self = this;
       // 更新背景图
       this.updateBackground();
       // 更新陆地
@@ -717,6 +755,36 @@ export default class Instruction {
       this.updateCycleWave();
       // 更新人物动态
       this.updateCharacter();
+      // 更新倒计时运行
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
+    }
+  }
+  // 倒计时运行函数
+  countdownFunc() {
+    if (this.clockDownTime > 0) {
+      this.clockDownTime--;
+    } else {
+      // 游戏结束
+      clearInterval(this.clearSetInterval);
+      this.gameOver = true;
+      soundManager.play('crack');
+      soundManager.play('lose', 200);
+      this.lastLifeCount--
+      if (this.lastLifeCount < 0) {
+        this.lastLifeCount = 0;
+      }
+      wx.setStorageSync('lifeCount', this.lastLifeCount)
+      if (this.lastLifeCount == 0) {
+        this.stopAction();
+      } else {
+        this.resetGame();
+        this.stopAction();
+      }
     }
   }
   // 通用返回按钮作用区
@@ -739,7 +807,8 @@ export default class Instruction {
         this.resetGame();
         this.stopAction();
         wx.setStorageSync('lifeCount', 2);
-        wx.setStorageSync('trailNumber', '')
+        wx.setStorageSync('trailNumber', '');
+        this.game.switchScene(new this.game.begin(this.game));
       }
       if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
         touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {
@@ -1032,6 +1101,10 @@ export default class Instruction {
     this.gearSound = false;
     // 记录生命总数
     this.lastLifeCount = null;
+    // 记录倒计时时间
+    this.clockDownTime = 60;
+    // 只运行一次
+    this.runLimit = 1;
     // 重置冲击波数据
     this.cycleAddDistence = 0;
     this.cycleAddHeight = 0;
@@ -1041,6 +1114,7 @@ export default class Instruction {
     this.spikesX = this.canvas.width * 0.35;
     this.gameOver = false; // 记录游戏是否结束
     this.gameWin = false;
+    this.clearSetInterval = '';
   }
   // 页面销毁机制
   destroy() {
@@ -1056,6 +1130,7 @@ export default class Instruction {
     this.leftGear.src = '';
     this.rightGear.src = '';
     this.lifeCount.src = '';
+    this.clockDown.src = '';
     this.failTipsImage.src = '';
     this.platform.forEach(img => img = null);
     // 清理人物图片
