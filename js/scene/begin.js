@@ -8,7 +8,7 @@ import SoundManager from '../../utils/soundManager';
 import BackgroundMusic from '../../utils/backgroundMusic';
 const soundManager = new SoundManager();
 const backgroundMusic = new BackgroundMusic();
-export default class Instruction {
+export default class Begin {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
@@ -616,18 +616,18 @@ export default class Instruction {
     // 点击返回按钮事件
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
-      backgroundMusic.stopBackgroundMusic();
       clearInterval(this.clearSetInterval);
+      backgroundMusic.stopBackgroundMusic();
       btn.onClick();
       return
     }
     if (this.gameOver) {
       if (touchX >= this.buttonStartInfo.x && touchX <= this.buttonStartInfo.x + this.buttonStartInfo.width &&
         touchY >= this.buttonStartInfo.y && touchY <= this.buttonStartInfo.y + this.buttonStartInfo.height) {
-        this.resetGame();
         this.stopAction();
         wx.setStorageSync('lifeCount', 2);
-        wx.setStorageSync('trailNumber', '')
+        wx.setStorageSync('trailNumber', '');
+        this.game.switchScene(new this.game.begin(this.game));
       }
       if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
         touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {

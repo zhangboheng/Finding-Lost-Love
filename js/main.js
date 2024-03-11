@@ -7,6 +7,8 @@ import Third from './scene/third.js';
 import Fourth from './scene/fourth.js';
 import Fifth from './scene/fifth.js';
 import Sixth from './scene/sixth.js';
+import Phone from './scene/phone.js';
+import Seventh from './scene/seventh.js';
 export default class Game {
   constructor() {
     this.initSettings();
@@ -20,9 +22,11 @@ export default class Game {
     this.third = Third;
     this.fourth = Fourth;
     this.fifth = Fifth;
-    this.sixth = Sixth
-    this.currentScene = new this.sixth(this);
-    this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth];
+    this.sixth = Sixth;
+    this.phone = Phone;
+    this.seventh = Seventh;
+    this.currentScene = new this.seventh(this);
+    this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth, Phone, Seventh];
     canvas.addEventListener('touchstart', (e) => {
       this.currentScene.touchHandler(e);
     });

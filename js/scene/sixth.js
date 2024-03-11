@@ -8,7 +8,7 @@ import SoundManager from '../../utils/soundManager';
 import BackgroundMusic from '../../utils/backgroundMusic';
 const soundManager = new SoundManager();
 const backgroundMusic = new BackgroundMusic();
-export default class Instruction {
+export default class Sixth {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
@@ -195,6 +195,10 @@ export default class Instruction {
     this.gearStatue = 'left';
     // 是否让机关响起了
     this.gearSound = false;
+    // 绘制手机的图片
+    this.phone = new Image();
+    this.phone.src = 'image/phone.png';
+    this.phoneObtain = false; // 是否获取手机道具
     // 绘制生命数显示
     this.lifeCount = new Image();
     this.lifeCount.src = 'image/head.png';
@@ -398,6 +402,12 @@ export default class Instruction {
       }
     }
   }
+  // 绘制手机
+  drawPhone(){
+    if (this.phone.complete && !this.phoneObtain){
+      this.context.drawImage(this.phone, (this.canvas.width - this.phone.width) * 2 + this.yardX - this.phone.width, this.groundHeight - this.phone.height, this.phone.width, this.phone.height)
+    }
+  }
   // 绘制终点
   drawEndDoor() {
     if (this.endDoorStatue.endDoorShow) {
@@ -443,8 +453,10 @@ export default class Instruction {
       }
     }
     // 当落地后跟随人物的 x 变化而变化
-    if (this.endDoorStatue.follow && this.character.x >= 35) {
-      this.endDoorStatue.distence = -this.character.x + this.endDoorStatue.lastCharacterX;
+    if (this.endDoorStatue.follow) {
+      if (this.character.x >= 35){
+        this.endDoorStatue.distence = -this.character.x + this.endDoorStatue.lastCharacterX;
+      }
     }
   }
   // 绘制人物
@@ -541,14 +553,19 @@ export default class Instruction {
         this.gearSound = true;
       }
     }
+    // 判断是否与手机碰撞
+    if (this.character.x + this.character.width <= (this.canvas.width - this.phone.width) * 2 + this.yardX && this.character.x > (this.canvas.width - this.phone.width) * 2 + this.yardX - this.phone.width && this.character.y + this.character.height >= this.groundHeight && this.character.y <= this.groundHeight + this.phone.height && !this.phoneObtain){
+      this.phoneObtain = true;
+      soundManager.play('obtain');
+    }
     // 判断是否与终点碰撞
     if (this.character.x < this.endDoorStatue.x + this.endDoorTrueImage.width + this.endDoorStatue.distence && this.character.x + this.character.width > this.endDoorStatue.x + this.endDoorStatue.distence && this.character.y < this.endDoorStatue.y + this.endDoorTrueImage.height / 2 && this.character.y + this.character.height > this.endDoorStatue.y && this.endDoorStatue.isBreak) {
+      clearInterval(this.clearSetInterval);
       this.gameWin = true;
-      soundManager.play('win');
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 6)
-      this.game.switchScene(new this.game.begin(this.game));
+      this.game.switchScene(new this.game.phone(this.game));
     } else {
       this.gameWin = false;
     }
@@ -714,6 +731,8 @@ export default class Instruction {
     this.drawRockPlatform()
     // 绘制终点
     this.drawEndDoor();
+    // 绘制手机
+    this.drawPhone();
     // 绘制机关
     this.drawGear();
     // 绘制人物
@@ -749,12 +768,12 @@ export default class Instruction {
       this.updateYard();
       // 在函数中更新平台的位置
       this.updateRockPlatform();
-      // 更新终点位置
-      this.updateEndDoor();
-      // 更新冲击波
-      this.updateCycleWave();
       // 更新人物动态
       this.updateCharacter();
+      // 更新冲击波
+      this.updateCycleWave();
+      // 更新终点位置
+      this.updateEndDoor();
       // 更新倒计时运行
       if (this.runLimit >= 1){
         this.runLimit--;
@@ -797,6 +816,7 @@ export default class Instruction {
     // 点击返回按钮事件
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
+      clearInterval(this.clearSetInterval);
       backgroundMusic.stopBackgroundMusic();
       btn.onClick();
       return
@@ -804,7 +824,6 @@ export default class Instruction {
     if (this.gameOver) {
       if (touchX >= this.buttonStartInfo.x && touchX <= this.buttonStartInfo.x + this.buttonStartInfo.width &&
         touchY >= this.buttonStartInfo.y && touchY <= this.buttonStartInfo.y + this.buttonStartInfo.height) {
-        this.resetGame();
         this.stopAction();
         wx.setStorageSync('lifeCount', 2);
         wx.setStorageSync('trailNumber', '');
@@ -940,6 +959,9 @@ export default class Instruction {
   toWave() {
     if (this.character.theLastAction == 'left') {
       this.character.x = this.cycleX - 24 + this.cycleAddDistence;
+      if (this.character.x <= 35){
+        this.character.x = 35
+      }
     } else if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
       this.character.x = this.cycleX + this.cycleAddDistence;
     }
@@ -1099,6 +1121,7 @@ export default class Instruction {
     this.gearStatue = 'left';
     // 是否让机关响起了
     this.gearSound = false;
+    this.phoneObtain = false;
     // 记录生命总数
     this.lastLifeCount = null;
     // 记录倒计时时间
@@ -1129,6 +1152,7 @@ export default class Instruction {
     this.spikesImage.src = '';
     this.leftGear.src = '';
     this.rightGear.src = '';
+    this.phone.src = '';
     this.lifeCount.src = '';
     this.clockDown.src = '';
     this.failTipsImage.src = '';

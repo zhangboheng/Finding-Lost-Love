@@ -2,7 +2,7 @@ import {
   drawRoundedRect
 } from '../../utils/button';
 let systemInfo = wx.getSystemInfoSync();
-export default class Scene1 {
+export default class Startup {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
@@ -76,6 +76,10 @@ export default class Scene1 {
         this.game.switchScene(new this.game.fifth(this.game));
       }else if(getTrailGame == 5){
         this.game.switchScene(new this.game.sixth(this.game));
+      }else if(getTrailGame == 6){
+        this.game.switchScene(new this.game.phone(this.game));
+      }else if(getTrailGame == 7){
+        this.game.switchScene(new this.game.eighth(this.game));
       }else{
         this.game.switchScene(new this.game.begin(this.game));
       }

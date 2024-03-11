@@ -8,7 +8,9 @@ class SoundManager {
       crack: new Audio('audio/crack.mp3'),
       win: new Audio('audio/gamewin.mp3'),
       lose: new Audio('audio/gameover.mp3'),
-      gear: new Audio('audio/gear.mp3')
+      gear: new Audio('audio/gear.mp3'),
+      obtain: new Audio('audio/get.mp3'),
+      break: new Audio('audio/lightning.mp3')
     };
     // 初始化音乐播放状态
     this.musicEnabled = this.getMusicState();
