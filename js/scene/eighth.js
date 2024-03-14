@@ -13,7 +13,7 @@ import SoundManager from '../../utils/soundManager';
 import BackgroundMusic from '../../utils/backgroundMusic';
 const soundManager = new SoundManager();
 const backgroundMusic = new BackgroundMusic();
-export default class Begin {
+export default class Eighth {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;

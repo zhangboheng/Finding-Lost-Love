@@ -2,13 +2,16 @@ import {
   createBackButton,
   drawIconButton,
 } from '../../utils/button';
+import {
+  checkRectangleCollision
+} from '../../utils/algorithm'
 let systemInfo = wx.getSystemInfoSync();
 let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
 import SoundManager from '../../utils/soundManager';
 import BackgroundMusic from '../../utils/backgroundMusic';
 const soundManager = new SoundManager();
 const backgroundMusic = new BackgroundMusic();
-export default class Begin {
+export default class Ninth {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
@@ -141,6 +144,8 @@ export default class Begin {
     // 绘制终点的图片
     this.endDoorImage = new Image();
     this.endDoorImage.src = 'image/doorbreak.png';
+    this.endDoorTrueImage = new Image();
+    this.endDoorTrueImage.src = 'image/doorbreakbubble.png';
     // 绘制时间魔法阵
     this.transport = new Image();
     this.transport.src = 'image/transport.png';
@@ -168,20 +173,9 @@ export default class Begin {
       height: 16,
       show: false
     }
-    // 绘制锅盖图片
-    this.spotImage = new Image();
-    this.spotImage.src = 'image/tray.png';
     // 绘制招牌
     this.bandImage = new Image();
     this.bandImage.src = 'image/band.png';
-    // 移动平台信息
-    this.recInfo = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight / 2 + 40,
-      width: 64,
-      height: 40,
-      show: true
-    }
     // 绘制机关左的图片
     this.leftGear = new Image();
     this.leftGear.src = 'image/joystickleft.png';
@@ -200,11 +194,16 @@ export default class Begin {
       x: this.canvas.width / 2,
       y: 0,
       ropeWidth: 10,
-      ropeLength: 200,
+      ropeLength: this.groundHeight * 3 / 4,
       angle: Math.PI / 4,
       angularVelocity: 0.05,
       gravity: 0.1,
-      dampeningFactor: 0.9999999
+      dampeningFactor: 0.9999999,
+      break: false,
+      lastX: 0,
+      lastY: 0,
+      velocityY: 0,
+      gravity: 0.3
     }
     // 绘制生命数显示
     this.lifeCount = new Image();
@@ -399,12 +398,6 @@ export default class Begin {
       }
     }
   }
-  // 绘制终点
-  drawEndDoor(){
-    if(this.endDoorImage.complete){
-      this.context.drawImage(this.endDoorImage, this.canvas.width - this.endDoorImage.width, this.groundHeight - this.endDoorImage.height / 2, this.endDoorImage.width, this.endDoorImage.height)
-    }
-  }
   // 绘制人物
   drawCharacter() {
     let characterImg;
@@ -479,46 +472,39 @@ export default class Begin {
       }
     }
     // 判断是否与终点碰撞
-    // if (this.character.x >= this.canvas.width - this.endDoorImage.width && this.character.x <= this.canvas.width && this.character.y >= this.groundHeight - this.endDoorImage.height / 2 && this.character.y <= this.groundHeight + this.endDoorImage.height / 2){
-    //   clearInterval(this.clearSetInterval);
-    //   this.gameWin = true;
-    //   soundManager.play('win');
-    //   backgroundMusic.stopBackgroundMusic();
-    //   // 前往下一关卡
-    //   wx.setStorageSync('trailNumber', 1)
-    //   this.game.switchScene(new this.game.second(this.game));
-    // }else{
-    //   this.gameWin = false;
-    // }
-  }
-  // 绘制移动平台
-  drawRec() {
-    if (this.recInfo.show) {
-      if (this.spotImage.complete) {
-        this.context.drawImage(this.spotImage, this.recInfo.x, this.recInfo.y, this.recInfo.width, this.recInfo.height);
-      }
-    }
-  }
-  // 更新移动平台
-  updateRec() {
-    this.recInfo.x -= this.canvas.width / 600
-    if (this.recInfo.x < -64) {
-      this.recInfo.x = this.canvas.width
+    if (checkRectangleCollision(this.character,{x: this.ropeInfo.lastX, y: this.ropeInfo.lastY, width: 64, height: 64}) && this.ropeInfo.break){
+      clearInterval(this.clearSetInterval);
+      this.gameWin = true;
+      soundManager.play('win');
+      backgroundMusic.stopBackgroundMusic();
+      // 前往下一关卡
+      wx.setStorageSync('trailNumber', 9)
+      this.game.switchScene(new this.game.Tenth(this.game));
+    }else{
+      this.gameWin = false;
     }
   }
   // 绘制钟摆
   drawPendulum() {
     if (this.gearStatue == 'right'){
       // 绘制绳子
-      var ropeEndX = this.ropeInfo.x + this.ropeInfo.ropeLength * Math.sin(this.ropeInfo.angle);
+      var ropeEndX = this.ropeInfo.x + this.ropeInfo.ropeLength * Math.sin(this.ropeInfo.angle) + this.moveX;
       var ropeEndY = this.ropeInfo.y + this.ropeInfo.ropeLength * Math.cos(this.ropeInfo.angle);
       this.context.save();
       this.context.translate(ropeEndX, ropeEndY)
       this.context.rotate(-this.ropeInfo.angle);
-      this.context.drawImage(this.ropeImage, -this.ropeInfo.ropeWidth / 2, -this.ropeInfo.ropeLength * 3 / 2 - 20, this.ropeInfo.ropeWidth, this.ropeInfo.ropeLength * 2);
+      if (!this.ropeInfo.break) {
+        this.context.drawImage(this.ropeImage, -this.ropeInfo.ropeWidth / 2, -this.ropeInfo.ropeLength * 3 / 2 - 20, this.ropeInfo.ropeWidth, this.ropeInfo.ropeLength * 2);
+      }
       this.context.restore();
       // 绘制钟摆的球
-      this.context.drawImage(this.endDoorImage, ropeEndX - 30, ropeEndY - 60, this.endDoorImage.width, this.endDoorImage.height);
+      if (!this.ropeInfo.break) {
+        this.context.drawImage(this.endDoorTrueImage, ropeEndX - 30, ropeEndY - 60, this.endDoorTrueImage.width, this.endDoorTrueImage.height);
+        this.ropeInfo.lastX = ropeEndX - 30;
+        this.ropeInfo.lastY = ropeEndY - 60;
+      }else{
+        this.context.drawImage(this.endDoorImage, this.ropeInfo.lastX, this.ropeInfo.lastY, this.endDoorImage.width, this.endDoorImage.height);
+      }
     }
   }
   // 更新钟摆状态
@@ -527,13 +513,19 @@ export default class Begin {
     this.ropeInfo.angularVelocity += angularAcceleration;
     this.ropeInfo.angularVelocity *= this.ropeInfo.dampeningFactor;
     this.ropeInfo.angle += this.ropeInfo.angularVelocity;
-    // Limit the swing to 120 degrees to either side
     if (this.ropeInfo.angle > Math.PI / 4) {
       this.ropeInfo.angle = Math.PI / 4;
       this.ropeInfo.angularVelocity = 0;
     } else if (this.ropeInfo.angle < - Math.PI / 4) {
       this.ropeInfo.angle = - Math.PI / 4;
       this.ropeInfo.angularVelocity = 0;
+    }
+  }
+  // 更新终点状态
+  updateEndDoor() {
+    if (this.ropeInfo.break && this.ropeInfo.lastY < this.groundHeight - this.endDoorImage.height / 2) {
+      this.ropeInfo.velocityY += this.ropeInfo.gravity;
+      this.ropeInfo.lastY += this.ropeInfo.velocityY;
     }
   }
   // 绘制冲击波
@@ -564,6 +556,8 @@ export default class Begin {
   }
   // 更新冲击波
   updateCycleWave(){
+    var ropeEndX = this.ropeInfo.x + this.ropeInfo.ropeLength * Math.sin(this.ropeInfo.angle) + this.moveX;
+    var ropeEndY = this.ropeInfo.y + this.ropeInfo.ropeLength * Math.cos(this.ropeInfo.angle);
     if (this.character.shotWave){
       if(this.direction == 'right'){
         if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20){
@@ -596,6 +590,11 @@ export default class Begin {
           this.cycleX = this.transportSecondInfo.x;
           this.cycleAddDistence = 20;
         }
+      }
+      // 冲击波与钟摆绳子的碰撞检测
+      if (this.gearStatue == 'right' && this.cycleX + this.cycleAddDistence > ropeEndX && this.cycleX + this.cycleAddDistence <  ropeEndX + 10 && this.cycleAddHeight < ropeEndY && !this.ropeInfo.break) {
+        this.ropeInfo.break = true;
+        soundManager.play('crack');
       }
     }
   }
@@ -706,18 +705,14 @@ export default class Begin {
     this.drawTransport();
     // 绘制循环提示
     this.drawCycleWaveTips();
-    // 绘制终点
-    // this.drawEndDoor();
-    // 绘制人物
-    this.drawCharacter();
-    // 绘制平台
-    // this.drawRec();
     // 绘制招牌
     this.drawBand();
     // 绘制机关
     this.drawGear();
     // 绘制钟摆
     this.drawPendulum();
+    // 绘制人物
+    this.drawCharacter();
     // 绘制冲击波
     this.drawCycleWave();
     // 绘制返回按钮
@@ -749,19 +744,19 @@ export default class Begin {
       this.updateTransport();
       // 更新钟摆状态
       this.updatePendulum();
-      // 更新移动平台
-      // this.updateRec();
+      // 更新终点状态
+      this.updateEndDoor();
       // 更新冲击波
       this.updateCycleWave();
       // 更新人物动态
       this.updateCharacter();
       // 更新倒计时运行
-      // if (this.runLimit >= 1){
-      //   this.runLimit--;
-      //   this.clearSetInterval = setInterval(function() {
-      //     self.countdownFunc();
-      //   }, 1000);
-      // }
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
     }
   }
   // 倒计时运行函数
@@ -1086,14 +1081,6 @@ export default class Begin {
       height: 16,
       show: false
     }
-    // 移动平台信息
-    this.recInfo = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight / 2 + 40,
-      width: 64,
-      height: 40,
-      show: true
-    }
     // 判断机关状态
     this.gearStatue = 'left';
     // 是否让机关响起了
@@ -1103,11 +1090,16 @@ export default class Begin {
       x: this.canvas.width / 2,
       y: 0,
       ropeWidth: 10,
-      ropeLength: 200,
+      ropeLength: this.groundHeight * 3 / 4,
       angle: Math.PI / 4,
       angularVelocity: 0.05,
       gravity: 0.1,
-      dampeningFactor: 0.9999999
+      dampeningFactor: 0.9999999,
+      break: false,
+      lastX: 0,
+      lastY: 0,
+      velocityY: 0,
+      gravity: 0.3
     }
     // 记录生命总数
     this.lastLifeCount = null;
@@ -1136,9 +1128,10 @@ export default class Begin {
     this.gameBackground.src = '';
     this.yardImage.src = '';
     this.cycleImage.src = '';
+    this.ropeImage.src = '';
     this.endDoorImage.src = '';
+    this.endDoorTrueImage.src = '';
     this.transport.src = '';
-    this.spotImage.src = '';
     this.lifeCount.src = '';
     this.clockDown.src = '';
     this.leftGear.src = '';
