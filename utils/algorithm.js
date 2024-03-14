@@ -1,3 +1,4 @@
+// 圆形与矩形的碰撞检测
 export function circleRectCollision(circle, rect) {
   // 检测圆心是否在矩形内
   if (circle.x >= rect.x && circle.x <= rect.x + rect.width &&
@@ -120,4 +121,23 @@ function dot(a, b) {
 function normalize(vector) {
   let length = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
   return { x: vector.x / length, y: vector.y / length };
+}
+
+// 获取彩虹渐变色
+export function getRainbowColor(index) {
+  var colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
+  return colors[index];
+}
+
+// 矩形之间的碰撞检测
+export function checkRectangleCollision(rect1, rect2) {
+  // 矩形1的右边界小于矩形2的左边界，或者矩形1的左边界大于矩形2的右边界
+  if (rect1.x + rect1.width < rect2.x + rect2.width / 2 || rect1.x > rect2.x + rect2.width / 2) {
+      return false; // 没有发生水平碰撞
+  }
+  // 矩形1的下边界小于矩形2的上边界，或者矩形1的上边界大于矩形2的下边界
+  if (rect1.y + rect1.height < rect2.y + rect2.height / 2 || rect1.y > rect2.y + rect2.height / 2) {
+      return false; // 没有发生垂直碰撞
+  }
+  return true; // 在水平和垂直方向上都发生了碰撞
 }

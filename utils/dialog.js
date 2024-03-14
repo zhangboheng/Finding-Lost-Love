@@ -54,7 +54,7 @@ export function drawDialog(context, text, options = {}) {
 }
 
 // 矩形提示框
-export function showBoxMessage(context, message, x, y, backgroundColor = '#f5d659', strokeColor = 'black', fontSize = 'bold 20px') {
+export function showBoxMessage(context, message, x, y, backgroundColor = '#fc86bc99', strokeColor = 'black', fontSize = 'bold 20px') {
   // 设置文本样式
   context.fillStyle = backgroundColor;
   context.strokeStyle = strokeColor;

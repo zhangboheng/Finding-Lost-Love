@@ -79,7 +79,9 @@ export default class Startup {
       }else if(getTrailGame == 6){
         this.game.switchScene(new this.game.phone(this.game));
       }else if(getTrailGame == 7){
-        this.game.switchScene(new this.game.eighth(this.game));
+        this.game.switchScene(new this.game.playground(this.game));
+      }else if(getTrailGame == 8){
+        this.game.switchScene(new this.game.ninth(this.game));
       }else{
         this.game.switchScene(new this.game.begin(this.game));
       }

@@ -905,6 +905,7 @@ export default class Begin {
     this.backButton.image.src = '';
     this.gameBackground.src = '';
     this.yardImage.src = '';
+    this.cycleImage.src = '';
     this.endDoorImage.src = '';
     this.spikesImage.src = '';
     this.lifeCount.src = '';

@@ -45,10 +45,10 @@ export default class Seventh {
     this.roadHeight = this.groundHeight; // 道路的高度
     // 加载陷阱图片
     this.trapImages = [
-      'image/woodenbox.png',
+      'image/fire.png',
       'image/woodenstackbox.png',
-      'image/prisonbarrier.png',
-      'image/barrier.png',
+      'image/mountain.png',
+      'image/hurdle.png',
     ].map(src => {
       const img = new Image();
       img.src = src;
@@ -62,6 +62,11 @@ export default class Seventh {
     this.trapInterval = 200; // 陷阱生成的间隔（以帧计）
     // 创建返回按钮
     this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+      if(this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
+      this.gameOver = true;
       this.game.switchScene(new this.game.startup(this.game));
     });
     // 刘逸尘属性
@@ -96,6 +101,10 @@ export default class Seventh {
     this.lifeCount.src = 'image/head.png';
     // 记录生命总数
     this.lastLifeCount = null;
+    // 记录倒计时时间
+    this.clockDownTime = 90;
+    // 只运行一次
+    this.runLimit = 1;
     // 绘制终点的图片
     this.endDoorImage = new Image();
     this.endDoorImage.src = 'image/doorbreak.png';
@@ -182,6 +191,31 @@ export default class Seventh {
     this.context.fillText(number, startX, scoreY);
     this.context.restore();
   }
+  // 绘制倒计时
+  startCountdown() {
+    const iconSize = 24; // 图标大小
+    const iconPadding = 10; // 图标与分数之间的间距
+    // 计算分数文本的宽度
+    const textWidth = this.context.measureText(this.clockDownTime.toString().padStart(2, '0')).width;
+    // 计算总宽度（图标宽度 + 间距 + 文本宽度）
+    const totalWidth = iconSize + iconPadding + textWidth;
+    // 计算起始 x 坐标，使图标和分数组合居中
+    const startX = (this.canvas.width - totalWidth) / 2;
+    const iconX = startX;
+    const clockDownX = iconX + iconSize + iconPadding;
+    const iconY = menuButtonInfo.top + 6; // 图标的y坐标
+    const clockDownY = menuButtonInfo.top + 20; // 分数的y坐标
+    // 绘制图标
+    if (this.heroFootprintImage.complete) {
+      this.context.drawImage(this.heroFootprintImage, iconX, iconY, iconSize, iconSize);
+    }
+    this.context.save();
+    this.context.fillStyle = '#ffffff99';
+    this.context.textAlign = 'left'; // 文本左对齐
+    this.context.textBaseline = 'middle';
+    this.context.fillText(`${this.clockDownTime.toString().padStart(2, '0')}`, clockDownX, clockDownY);
+    this.context.restore();
+  }
   // 绘制生命数
   drawLifeCount() {
     // 记录生命总数
@@ -203,29 +237,6 @@ export default class Seventh {
     this.context.textBaseline = 'middle';
     this.context.fillText(`X${this.lastLifeCount}`, scoreX, scoreY);
     this.context.restore();
-  }
-  // 绘制分数
-  drawScore() {
-    const iconSize = 24; // 图标大小
-    const iconPadding = 10; // 图标与分数之间的间距
-    const textWidth = this.context.measureText(this.score).width;
-    // 计算总宽度（图标宽度 + 间距 + 文本宽度）
-    const totalWidth = iconSize + iconPadding + textWidth;
-    // 计算起始 x 坐标，使图标和分数组合居中
-    const startX = (this.canvas.width - totalWidth) / 2;
-    const iconX = startX;
-    const scoreX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.top + 6; // 图标的y坐标
-    const scoreY = menuButtonInfo.top + 20; // 分数的y坐标
-    // 绘制图标
-    if (this.heroFootprintImage.complete) {
-      this.context.drawImage(this.heroFootprintImage, iconX, iconY, iconSize, iconSize);
-    }
-    // 绘制分数
-    this.context.fillStyle = '#ffffff99';
-    this.context.textAlign = 'left'; // 文本左对齐
-    this.context.textBaseline = 'middle';
-    this.context.fillText(this.score, scoreX, scoreY);
   }
   // 绘制道路
   drawRoad() {
@@ -312,7 +323,7 @@ export default class Seventh {
   // 绘制终点
   drawEndDoor() {
     if(this.endDoorImage.complete){
-      this.context.drawImage(this.endDoorImage, 6000 - this.endDoorImage.width - this.endDoorDistence, this.canvas.height - this.roadHeight - this.endDoorImage.height, this.endDoorImage.width, this.endDoorImage.height)
+      this.context.drawImage(this.endDoorImage, 6500 - this.endDoorImage.width - this.endDoorDistence, this.canvas.height - this.roadHeight - this.endDoorImage.height, this.endDoorImage.width, this.endDoorImage.height)
     }
   }
   // 更新终点位置
@@ -404,7 +415,8 @@ export default class Seventh {
         ]
       };
       // 使用SAT检测碰撞
-      if (doPolygonsIntersect(heroPolygon, trapPolygon)) {
+      if (doPolygonsIntersect(heroPolygon, trapPolygon) && this.score <= 6000) {
+        clearInterval(this.clearSetInterval);
         this.gameOver = true;
         backgroundMusic.stopBackgroundMusic();
         soundManager.play('crack');
@@ -420,14 +432,15 @@ export default class Seventh {
       }
     });
     // 判断是否与终点碰撞
-    if (this.score >= 5900){
+    if (this.score >= 6460){
+      clearInterval(this.clearSetInterval);
       this.gameOver = true;
       this.isLevelCompleted = true;
       backgroundMusic.stopBackgroundMusic();
       soundManager.play('win');
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 7)
-      this.game.switchScene(new this.game.begin(this.game));
+      this.game.switchScene(new this.game.playground(this.game));
     }
   }
   // 绘制消息提示
@@ -442,12 +455,12 @@ export default class Seventh {
     this.drawBackground();
     // 绘制返回按钮
     this.drawBack();
+    // 绘制倒计时
+    this.startCountdown();
     // 绘制生命数
     this.drawLifeCount();
     // 绘制关卡显示
     this.drawAroundNumber();
-    // 绘制分数
-    this.drawScore();
     // 绘制移动的道路
     this.drawRoad();
     // 绘制移动的陷阱
@@ -463,6 +476,7 @@ export default class Seventh {
   }
   // 游戏更新事件
   update() {
+    let self = this;
     if (!this.gameOver) {
       // 更新背景变化
       this.updateBackground();
@@ -474,6 +488,13 @@ export default class Seventh {
       this.updateEndDoor();
       // 更新刘逸尘图片切换
       this.updateHero();
+      // 更新倒计时运行
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
       // 更新黑色遮罩
       this.updateDrawBlackScreen();
     } else {
@@ -486,6 +507,26 @@ export default class Seventh {
       }
     }
   }
+  // 倒计时运行函数
+  countdownFunc() {
+    if (this.clockDownTime > 0) {
+      this.clockDownTime--;
+    } else {
+      // 游戏结束
+      clearInterval(this.clearSetInterval);
+      this.gameOver = true;
+      soundManager.play('crack');
+      soundManager.play('lose', 200);
+      this.lastLifeCount--
+      if (this.lastLifeCount < 0) {
+        this.lastLifeCount = 0;
+      }
+      wx.setStorageSync('lifeCount', this.lastLifeCount)
+      if (this.lastLifeCount != 0) {
+        this.resetGame();
+      }
+    }
+  }
   touchHandler(e) {
     const touch = e.touches[0];
     const canvasRect = this.canvas.getBoundingClientRect();
@@ -494,19 +535,20 @@ export default class Seventh {
     const btn = this.backButton;
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
-      btn.onClick();
-      this.gameOver = false;
+      clearInterval(this.clearSetInterval);
+      this.gameOver = true;
       // 游戏结束时
       backgroundMusic.stopBackgroundMusic();
+      btn.onClick();
       return
     }
     if (this.isLevelCompleted) {
       this.canDoubleJump = false;
       this.isOnGround = false;
     } else {
-      if (!this.gameOver) {
+      if (!this.gameOver && this.score <= 6000) {
         // 二极跳识别
-        if ((this.isOnGround || this.canDoubleJump) && this.score <= 5888) {
+        if (this.isOnGround || this.canDoubleJump) {
           this.velocityY = this.jumpHeight;
           if (!this.isOnGround) {
             if (this.canDoubleJump) {
@@ -563,6 +605,10 @@ export default class Seventh {
     this.isLevelCompleted = false;
     // 记录生命总数
     this.lastLifeCount = null;
+    // 记录倒计时时间
+    this.clockDownTime = 90;
+    // 只运行一次
+    this.runLimit = 1;
     // 重置定时
     this.trapTimer = 0;
   }
