@@ -82,6 +82,8 @@ export default class Startup {
         this.game.switchScene(new this.game.playground(this.game));
       }else if(getTrailGame == 8){
         this.game.switchScene(new this.game.ninth(this.game));
+      }else if(getTrailGame == 9){
+        this.game.switchScene(new this.game.tenth(this.game));
       }else{
         this.game.switchScene(new this.game.begin(this.game));
       }

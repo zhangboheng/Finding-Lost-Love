@@ -188,13 +188,13 @@ export default class Ninth {
     this.gearSound = false;
     // 绳子图片
     this.ropeImage = new Image();
-    this.ropeImage.src = 'image/rope.png';
+    this.ropeImage.src = 'image/iron.png';
     // 绘制钟摆绳子
     this.ropeInfo = {
       x: this.canvas.width / 2,
       y: 0,
       ropeWidth: 10,
-      ropeLength: this.groundHeight * 3 / 4,
+      ropeLength: this.groundHeight * 3 / 4 - 20,
       angle: Math.PI / 4,
       angularVelocity: 0.05,
       gravity: 0.1,
@@ -479,7 +479,7 @@ export default class Ninth {
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 9)
-      this.game.switchScene(new this.game.Tenth(this.game));
+      this.game.switchScene(new this.game.tenth(this.game));
     }else{
       this.gameWin = false;
     }
@@ -592,7 +592,7 @@ export default class Ninth {
         }
       }
       // 冲击波与钟摆绳子的碰撞检测
-      if (this.gearStatue == 'right' && this.cycleX + this.cycleAddDistence > ropeEndX && this.cycleX + this.cycleAddDistence <  ropeEndX + 10 && this.cycleAddHeight < ropeEndY && !this.ropeInfo.break) {
+      if (this.gearStatue == 'right' && this.cycleX + this.cycleAddDistence > ropeEndX && this.cycleX + this.cycleAddDistence <  ropeEndX + 10 && this.cycleAddHeight < ropeEndY && this.cycleAddHeight + 32 <= ropeEndY && !this.ropeInfo.break) {
         this.ropeInfo.break = true;
         soundManager.play('crack');
       }
@@ -1090,7 +1090,7 @@ export default class Ninth {
       x: this.canvas.width / 2,
       y: 0,
       ropeWidth: 10,
-      ropeLength: this.groundHeight * 3 / 4,
+      ropeLength: this.groundHeight * 3 / 4 - 20,
       angle: Math.PI / 4,
       angularVelocity: 0.05,
       gravity: 0.1,
