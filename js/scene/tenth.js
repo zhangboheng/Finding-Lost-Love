@@ -75,14 +75,14 @@ export default class Tenth {
       isOnCage: false, // 是否在箱子上
     };
     // 向右移动时候图片集锦
-    const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
+    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
       const frame = new Image();
       frame.src = path;
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
@@ -502,24 +502,6 @@ export default class Tenth {
         }
       }
     }
-    // 判断是否与老鼠碰撞检测
-    if (this.character.x + this.character.width >= this.mouse.x && this.character.x <= this.mouse.x + this.mouse.width && this.character.y <= this.mouse.y + this.mouse.height && this.character.y + this.character.height > this.mouse.y && this.mouse.catch == 0) {
-      clearInterval(this.clearSetInterval);
-      this.gameOver = true;
-      soundManager.play('crack');
-      soundManager.play('lose', 200);
-      this.lastLifeCount--
-      if(this.lastLifeCount < 0){
-        this.lastLifeCount = 0;
-      }
-      wx.setStorageSync('lifeCount', this.lastLifeCount)
-      if (this.lastLifeCount == 0){
-        this.stopAction();
-      }else{
-        this.resetGame();
-        this.stopAction();
-      }
-    }
     // 判断是否与终点碰撞
     if (this.character.x + this.character.width >= this.endDoorInfo.x && this.character.x <= this.endDoorInfo.x + this.endDoorInfo.width && this.character.y <= this.endDoorInfo.y + this.endDoorInfo.height && this.character.y + this.character.height >= this.endDoorInfo.y){
       clearInterval(this.clearSetInterval);
@@ -528,7 +510,7 @@ export default class Tenth {
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 10)
-      this.game.switchScene(new this.game.begin(this.game));
+      this.game.switchScene(new this.game.eleventh(this.game));
     }else{
       this.gameWin = false;
     }
@@ -1134,14 +1116,14 @@ export default class Tenth {
       isOnCage: false, // 是否在箱子上
     };
     // 向右移动时候图片集锦
-    const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
+    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
       const frame = new Image();
       frame.src = path;
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;

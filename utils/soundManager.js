@@ -10,7 +10,8 @@ class SoundManager {
       lose: new Audio('audio/gameover.mp3'),
       gear: new Audio('audio/gear.mp3'),
       obtain: new Audio('audio/get.mp3'),
-      break: new Audio('audio/lightning.mp3')
+      break: new Audio('audio/lightning.mp3'),
+      lightoff: new Audio('audio/lightoff.mp3')
     };
     // 初始化音乐播放状态
     this.musicEnabled = this.getMusicState();

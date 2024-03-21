@@ -73,14 +73,14 @@ export default class Second {
       isOnPlat: false, // 是否处于平台
     };
     // 向右移动时候图片集锦
-    const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
+    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
       const frame = new Image();
       frame.src = path;
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
@@ -896,14 +896,14 @@ export default class Second {
       isOnPlat: false, // 是否处于平台
     };
     // 向右移动时候图片集锦
-    const framePathsRight = ['image/right1.png', 'image/right2.png', 'image/right3.png'];
+    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
       const frame = new Image();
       frame.src = path;
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left2.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
