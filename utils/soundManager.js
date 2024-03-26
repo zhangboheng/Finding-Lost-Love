@@ -11,7 +11,9 @@ class SoundManager {
       gear: new Audio('audio/gear.mp3'),
       obtain: new Audio('audio/get.mp3'),
       break: new Audio('audio/lightning.mp3'),
-      lightoff: new Audio('audio/lightoff.mp3')
+      lightoff: new Audio('audio/lightoff.mp3'),
+      launch: new Audio('audio/launch.mp3'),
+      boom: new Audio('audio/boom.mp3')
     };
     // 初始化音乐播放状态
     this.musicEnabled = this.getMusicState();

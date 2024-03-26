@@ -15,6 +15,7 @@ import Ninth from './scene/ninth.js';
 import Tenth from './scene/tenth.js';
 import Eleventh from './scene/eleventh.js';
 import Twelfth from './scene/twelfth.js';
+import Ending from './scene/ending.js';
 export default class Game {
   constructor() {
     this.initSettings();
@@ -37,8 +38,9 @@ export default class Game {
     this.tenth = Tenth;
     this.eleventh = Eleventh;
     this.twelfth = Twelfth;
-    this.currentScene = new this.twelfth(this);
-    this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth, Phone, Seventh, Playground, Eighth, Ninth, Tenth, Eleventh, Twelfth];
+    this.ending = Ending;
+    this.currentScene = new this.ending(this);
+    this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth, Phone, Seventh, Playground, Eighth, Ninth, Tenth, Eleventh, Twelfth, Ending];
     canvas.addEventListener('touchstart', (e) => {
       this.currentScene.touchHandler(e);
     });

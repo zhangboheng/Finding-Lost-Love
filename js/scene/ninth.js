@@ -1129,6 +1129,7 @@ export default class Ninth {
     this.yardImage.src = '';
     this.cycleImage.src = '';
     this.ropeImage.src = '';
+    this.bandImage.src = '';
     this.endDoorImage.src = '';
     this.endDoorTrueImage.src = '';
     this.transport.src = '';

@@ -88,6 +88,8 @@ export default class Startup {
         this.game.switchScene(new this.game.eleventh(this.game));
       }else if(getTrailGame == 11){
         this.game.switchScene(new this.game.twelfth(this.game));
+      }else if(getTrailGame == 12){
+        this.game.switchScene(new this.game.ending(this.game));
       }else{
         this.game.switchScene(new this.game.begin(this.game));
       }
