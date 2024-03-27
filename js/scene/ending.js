@@ -1,20 +1,12 @@
 import {
   createBackButton
 } from '../../utils/button';
-let systemInfo = wx.getSystemInfoSync();
-let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
-import SoundManager from '../../utils/soundManager';
-import BackgroundMusic from '../../utils/backgroundMusic';
-const soundManager = new SoundManager();
-const backgroundMusic = new BackgroundMusic();
+import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
 export default class Ending {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
-    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
-    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
     // 加载背景音乐
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/phone.mp3');
@@ -72,9 +64,6 @@ export default class Ending {
     this.text = '';
     this.backgroundImage = new Image();
     this.backgroundImage.src = '';
-    // 添加触摸事件监听
-    wx.onTouchStart(this.touchStartHandler.bind(this));
-    wx.onTouchEnd(this.touchEndHandler.bind(this));
     this.context.font = '20px Arial';
     // 添加定时器，每隔 displayTimePerImage 毫秒切换一次图片
     this.timerId = setInterval(() => {
@@ -171,12 +160,7 @@ export default class Ending {
       btn.onClick();
       return
     }
-  }
-  touchStartHandler(e) {
-    const touch = e.touches[0];
-    const canvasRect = this.canvas.getBoundingClientRect();
-    const touchX = touch.clientX - canvasRect.left;
-    const touchY = touch.clientY - canvasRect.top;  // 判断是否点击在继续按钮区域
+    // 是否跳过
     if (
       touchX >= this.canvas.width / 2 - 50 && touchX <= this.canvas.width / 2 + 50 &&
       touchY >= this.canvas.height * 0.9 - 20 && touchY <= this.canvas.height * 0.9 + 20
@@ -186,16 +170,10 @@ export default class Ending {
       this.game.switchScene(new this.game.startup(this.game));
     }
   }
-  touchEndHandler(e) {
-  }
   // 页面销毁机制
   destroy() {
-    backgroundMusic.stopBackgroundMusic();
     // 清理图像资源
     clearInterval(this.timerId);
-    // 移除触摸事件监听器
-    wx.offTouchStart(this.touchStartHandler.bind(this));
-    wx.offTouchEnd(this.touchEndHandler.bind(this));
     // 清理加载图片
     this.textContent = [];
     this.backgroundImage.src = '';

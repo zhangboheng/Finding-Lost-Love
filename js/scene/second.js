@@ -2,22 +2,15 @@ import {
   createBackButton,
   drawIconButton,
 } from '../../utils/button';
-let systemInfo = wx.getSystemInfoSync();
-let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
-import SoundManager from '../../utils/soundManager';
-import BackgroundMusic from '../../utils/backgroundMusic';
-const soundManager = new SoundManager();
-const backgroundMusic = new BackgroundMusic();
+import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
 export default class Second {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
-    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
-    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
     // 加载背景音乐
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
+    backgroundMusic.setBackgroundMusicSource('audio/back.mp3');
     backgroundMusic.playBackgroundMusic();
     // 获取音效初始状态
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));

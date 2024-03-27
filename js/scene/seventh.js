@@ -8,20 +8,12 @@ import {
 import {
   showBoxMessage
 } from '../../utils/dialog';
-import SoundManager from '../../utils/soundManager';
-import BackgroundMusic from '../../utils/backgroundMusic';
-const soundManager = new SoundManager();
-const backgroundMusic = new BackgroundMusic();
-let systemInfo = wx.getSystemInfoSync();
-let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
+import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
 export default class Seventh {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
-    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
-    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
     // 加载背景音乐
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/running.mp3');

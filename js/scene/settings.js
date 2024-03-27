@@ -2,22 +2,12 @@ import {
   createBackButton,
   drawRoundedRectNoStrike
 } from '../../utils/button';
-import SoundManager from '../../utils/soundManager';
-import BackgroundMusic from '../../utils/backgroundMusic';
-let systemInfo = wx.getSystemInfoSync();
-let menuButtonInfo = wx.getMenuButtonBoundingClientRect();
+import { soundManager, backgroundMusic, menuButtonInfo } from '../../utils/global';
 export default class Settings {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
-    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
-    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
-    // 创建BackgroundMusic实例
-    this.backgroundMusic = new BackgroundMusic();
-    // 创建SoundManager实例
-    this.soundManager = new SoundManager();
     // 绘制背景
     this.backgroundImage = new Image();
     this.backgroundImage.src = 'image/thumbnail.jpg';
@@ -321,12 +311,12 @@ export default class Settings {
   }
   // 管理音效状态
   toggleMusic() {
-    const currentMusicState = this.soundManager.getMusicState();
-    this.soundManager.setMusicState(!currentMusicState);
+    const currentMusicState = soundManager.getMusicState();
+    soundManager.setMusicState(!currentMusicState);
   }
   // 管理背景音乐状态
   toggleBackgroundMusic() {
-    const currentMusicState = this.backgroundMusic.getBackgroundMusicState();
-    this.backgroundMusic.setBackgroundMusicState(!currentMusicState);
+    const currentMusicState = backgroundMusic.getBackgroundMusicState();
+    backgroundMusic.setBackgroundMusicState(!currentMusicState);
   }
 }

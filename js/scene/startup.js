@@ -1,15 +1,11 @@
 import {
   drawRoundedRect
 } from '../../utils/button';
-let systemInfo = wx.getSystemInfoSync();
 export default class Startup {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
-    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
-    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
     this.backgroundImage = new Image();
     this.backgroundImage.src = 'image/thumbnail.jpg';
     // 设置开始按钮的基础设置

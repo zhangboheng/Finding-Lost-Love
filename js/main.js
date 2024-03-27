@@ -16,11 +16,17 @@ import Tenth from './scene/tenth.js';
 import Eleventh from './scene/eleventh.js';
 import Twelfth from './scene/twelfth.js';
 import Ending from './scene/ending.js';
+import { systemInfo } from '../utils/global';
 export default class Game {
   constructor() {
     this.initSettings();
     this.canvas = wx.createCanvas();
     this.context = canvas.getContext('2d');
+    this.canvas.width = systemInfo.screenWidth;
+    this.canvas.height = systemInfo.screenHeight;
+    canvas.width = systemInfo.screenWidth * systemInfo.devicePixelRatio;
+    canvas.height = systemInfo.screenHeight * systemInfo.devicePixelRatio;
+    this.context.scale(systemInfo.devicePixelRatio, systemInfo.devicePixelRatio);
     this.startup = Startup;
     this.settings = Settings;
     this.instruction = Instruction;
@@ -39,7 +45,7 @@ export default class Game {
     this.eleventh = Eleventh;
     this.twelfth = Twelfth;
     this.ending = Ending;
-    this.currentScene = new this.ending(this);
+    this.currentScene = new this.startup(this);
     this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth, Phone, Seventh, Playground, Eighth, Ninth, Tenth, Eleventh, Twelfth, Ending];
     canvas.addEventListener('touchstart', (e) => {
       this.currentScene.touchHandler(e);
