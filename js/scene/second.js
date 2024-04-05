@@ -51,11 +51,11 @@ export default class Second {
     };
     // 绘制冲击波
     this.cycleInfo = {
-      speed: 2 * scaleX,
-      cycleAddDistence: 0,
-      cycleAddHeight: 0,
-      angle: 0,
       cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
       direction: ''
     }
     // 加载平台数据
@@ -617,12 +617,12 @@ export default class Second {
       // 更新人物动态
       this.updateCharacter();
       // 更新倒计时运行
-      // if (this.runLimit >= 1){
-      //   this.runLimit--;
-      //   this.clearSetInterval = setInterval(function() {
-      //     self.countdownFunc();
-      //   }, 1000);
-      // }
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
     }
   }
   // 倒计时运行函数
@@ -928,11 +928,11 @@ export default class Second {
     }
     // 绘制冲击波
     this.cycleInfo = {
-      speed: 2 * scaleX,
-      cycleAddDistence: 0,
-      cycleAddHeight: 0,
-      angle: 0,
       cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
       direction: ''
     }
     // 加载平台数据

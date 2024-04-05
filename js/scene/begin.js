@@ -50,11 +50,11 @@ export default class Begin {
     };
     // 绘制冲击波
     this.cycleInfo = {
-      speed: 2 * scaleX,
-      cycleAddDistence: 0,
-      cycleAddHeight: 0,
-      angle: 0,
       cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
       direction: ''
     }
     this.endDoorStatue = {
@@ -866,11 +866,11 @@ export default class Begin {
     }
     // 绘制冲击波
     this.cycleInfo = {
-      speed: 2 * scaleX,
-      cycleAddDistence: 0,
-      cycleAddHeight: 0,
-      angle: 0,
       cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
       direction: ''
     }
     this.endDoorStatue = {
