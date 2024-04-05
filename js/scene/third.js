@@ -6,7 +6,7 @@ import {
   circleRectCollision
 } from '../../utils/algorithm';
 import { soundManager, backgroundMusic, menuButtonInfo, scaleX, scaleY } from '../../utils/global';
-export default class Second {
+export default class Third {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
@@ -322,7 +322,7 @@ export default class Second {
   }
   // 在函数中更新平台的位置
   updateRockPlatform(){
-    const platformSpeed = 0.5;  // 平台移动速度
+    const platformSpeed = 0.5 * scaleX;  // 平台移动速度
     for (const platform of this.rockPlatformList.slice(1,2)) {
       // 根据方向更新平台的位置
       platform.x += platformSpeed * platform.direction;
@@ -705,12 +705,12 @@ export default class Second {
       // 更新人物动态
       this.updateCharacter();
       // 更新倒计时运行
-      // if (this.runLimit >= 1){
-      //   this.runLimit--;
-      //   this.clearSetInterval = setInterval(function() {
-      //     self.countdownFunc();
-      //   }, 1000);
-      // }
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
     }
   }
   // 倒计时运行函数

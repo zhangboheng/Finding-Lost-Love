@@ -45,7 +45,7 @@ export default class Game {
     this.eleventh = Eleventh;
     this.twelfth = Twelfth;
     this.ending = Ending;
-    this.currentScene = new this.third(this);
+    this.currentScene = new this.fourth(this);
     this.instanceList = [Begin, Second, Third, Fourth, Fifth, Sixth, Phone, Seventh, Playground, Eighth, Ninth, Tenth, Eleventh, Twelfth, Ending];
     canvas.addEventListener('touchstart', (e) => {
       this.currentScene.touchHandler(e);
