@@ -50,6 +50,7 @@ export default class Fith {
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
+      isFall: false, // 是否处于掉落状态
     };
     // 绘制冲击波
     this.cycleInfo = {
@@ -344,7 +345,7 @@ export default class Fith {
   drawRockPlatform() {
     this.platform.forEach((element, index) => {
       if (element.complete) {
-        this.context.drawImage(element, this.rockPlatformList[index].x, this.rockPlatformList[index].y, element.width * scaleY / 2, element.height * scaleY / 2);
+        this.context.drawImage(element, this.rockPlatformList[index].x, this.rockPlatformList[index].y, element.width * scaleX / 2, element.height * scaleY / 2);
       }
     })
   }
@@ -475,7 +476,7 @@ export default class Fith {
     // 检测人物与平台的碰撞
     for (const plat of this.rockPlatformList) {
       if (
-        this.character.x <= plat.x + 40 * scaleX &&
+        this.character.x <= plat.x + 50 * scaleX &&
         this.character.x + this.character.width >= plat.x + 10 * scaleX &&
         this.character.y + this.character.height >= plat.y && this.character.y <= plat.y + 2 * scaleY && this.character.velocityY > 0
       ) {
@@ -489,7 +490,7 @@ export default class Fith {
         plat.onPlat = true;
       }else{
         if (plat.onPlat) {
-          if(this.character.x > plat.x + 40 * scaleX || this.character.x + this.character.width < plat.x + 10 * scaleX){
+          if(this.character.x > plat.x + 50 * scaleX || this.character.x + this.character.width < plat.x + 10 * scaleX){
             plat.onPlat = false;
             this.character.jumping = true; // 使人物开始下落
             this.character.isOnGround = false;
@@ -1002,6 +1003,7 @@ export default class Fith {
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
+      isFall: false, // 是否处于掉落状态
     };
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];

@@ -292,7 +292,7 @@ export default class Second {
   drawRockPlatform() {
     this.platform.forEach((element, index) => {
       if (element.complete) {
-        this.context.drawImage(element, this.rockPlatformList[index].x, this.rockPlatformList[index].y, element.width * scaleY / 2, element.height * scaleY / 2);
+        this.context.drawImage(element, this.rockPlatformList[index].x, this.rockPlatformList[index].y, element.width * scaleX / 2, element.height * scaleY / 2);
       }
     })
   }
@@ -365,7 +365,7 @@ export default class Second {
     // 检测人物与平台的碰撞
     for (const plat of this.rockPlatformList) {
       if (
-        this.character.x <= plat.x + 40 * scaleX &&
+        this.character.x <= plat.x + 50 * scaleX &&
         this.character.x + this.character.width >= plat.x + 10 * scaleX &&
         this.character.y + this.character.height >= plat.y && this.character.y <= plat.y + 2 * scaleY && this.character.velocityY > 0
       ) {
@@ -379,7 +379,7 @@ export default class Second {
         plat.onPlat = true;
       }else{
         if (plat.onPlat) {
-          if(this.character.x > plat.x + 40 * scaleX || this.character.x + this.character.width < plat.x + 10 * scaleX){
+          if(this.character.x > plat.x + 50 * scaleX || this.character.x + this.character.width < plat.x + 10 * scaleX){
             plat.onPlat = false;
             this.character.jumping = true; // 使人物开始下落
             this.character.isOnGround = false;
