@@ -89,7 +89,7 @@ export default class Fith {
     }];
     this.gearInfo = {
       x: this.canvas.width - 104 * scaleX,
-      y: this.groundHeight - this.canvas.height * 0.30 - scaleY,
+      y: this.groundHeight - this.canvas.height * 0.30,
       width: 32 * scaleX,
       height: 32 * scaleY,
       statue: 'left',
@@ -1098,7 +1098,7 @@ export default class Fith {
     }];
     this.gearInfo = {
       x: this.canvas.width - 104 * scaleX,
-      y: this.groundHeight - this.canvas.height * 0.30 - scaleY,
+      y: this.groundHeight - this.canvas.height * 0.30,
       width: 32 * scaleX,
       height: 32 * scaleY,
       statue: 'left',

@@ -443,7 +443,7 @@ export default class Prison {
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 7)
-      this.game.switchScene(new this.game.eighth(this.game));
+      this.game.switchScene(new this.game.playground(this.game));
     }else{
       this.gameWin = false;
     }

@@ -1,27 +1,19 @@
 import {
   createBackButton
 } from '../../utils/button';
-import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
+import { soundManager, backgroundMusic, menuButtonInfo, scaleX, scaleY } from '../../utils/global';
 export default class Playground {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    // 加载背景音乐
+    /* 加载音乐音效管理器开始 */
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/phone.mp3');
     backgroundMusic.playBackgroundMusic();
-    // 获取音效初始状态
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
-    // 创建返回按钮
-    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
-      if (this.lastLifeCount == 0){
-        wx.setStorageSync('lifeCount', 2);
-        wx.setStorageSync('trailNumber', '')
-      }
-      this.gameOver = true;
-      this.game.switchScene(new this.game.startup(this.game));
-    });
+    /* 加载音乐音效管理器结束 */
+    /* 常量设置区域开始 */
     this.textContent = [
       {type:'text', content: '……'},
       {type: 'text', content: '刘逸尘\n呼～～呼～～\n太累了'},
@@ -43,13 +35,16 @@ export default class Playground {
     this.displayTimePerStage = 3000; // 每个场景切换
     this.currentTextIndex = 0;
     this.text = '';
-    this.backgroundImage = new Image();
-    this.backgroundImage.src = '';
-    this.context.font = '20px Arial';
-    // 添加定时器，每隔 displayTimePerImage 毫秒切换一次图片
+    this.context.font = `${20 * scaleX}px Arial`;
     this.timerId = setInterval(() => {
       this.changeText();
     }, this.displayTimePerStage);
+    /* 常量设置区域结束 */
+    /* 图片加载区域开始 */
+    this.backgroundImage = new Image();
+    this.backgroundImage.src = '';
+    this.backButton = '';
+    /* 图片加载区域结束 */
   }
   // 绘制背景
   drawBackground() {
@@ -64,6 +59,9 @@ export default class Playground {
   }
   // 绘制返回按钮
   drawBack() {
+    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+      this.game.switchScene(new this.game.startup(this.game));
+    });
     if (this.backButton.image.complete) {
       this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y);
     }
@@ -71,7 +69,7 @@ export default class Playground {
   // 绘制不同场景下的文字或者图片
   drawCenterStage() {
     const lines = this.text.split('\n');
-    const lineHeight = 25;  // 替换成实际行高
+    const lineHeight = 25 * scaleY;  // 替换成实际行高
     const totalHeight = lines.length * lineHeight;
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2 - totalHeight / 2;
@@ -137,18 +135,23 @@ export default class Playground {
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
       clearInterval(this.timerId);
+      if (this.lastLifeCount == 0){
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
       backgroundMusic.stopBackgroundMusic();
+      this.gameOver = true;
       btn.onClick();
       return
     }
-    // 是否跳过
+    // 点击跳过按钮
     if (
-      touchX >= this.canvas.width / 2 - 50 && touchX <= this.canvas.width / 2 + 50 &&
-      touchY >= this.canvas.height * 0.9 - 20 && touchY <= this.canvas.height * 0.9 + 20
+      touchX >= this.canvas.width / 2 - 50 * scaleX && touchX <= this.canvas.width / 2 + 50 * scaleX &&
+      touchY >= this.canvas.height * 0.9 - 20 * scaleY && touchY <= this.canvas.height * 0.9 + 20 * scaleY
     ) {
       clearInterval(this.timerId);
       backgroundMusic.stopBackgroundMusic();
-      this.game.switchScene(new this.game.eighth(this.game));
+      this.game.switchScene(new this.game.playground(this.game));
     }
   }
   // 页面销毁机制
@@ -157,5 +160,6 @@ export default class Playground {
     // 清理加载图片
     this.textContent = [];
     this.backgroundImage.src = '';
+    this.backButton = '';
   }
 }

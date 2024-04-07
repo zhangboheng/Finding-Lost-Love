@@ -4,61 +4,36 @@ import {
 } from '../../utils/button';
 import {
   circleRectCollision,
-  getRainbowColor,
-  checkRectangleCollision
-} from '../../utils/algorithm'
-import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
+  getRainbowColor
+} from '../../utils/algorithm';
+import {
+  soundManager,
+  backgroundMusic,
+  menuButtonInfo,
+  scaleX,
+  scaleY
+} from '../../utils/global';
 export default class Eighth {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    // 加载背景音乐
+    /* 加载音乐音效管理器开始 */
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/cinemaback.mp3');
     backgroundMusic.playBackgroundMusic();
-    // 获取音效初始状态
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
-    // 绘制游戏区域背景
-    this.gameBackground = new Image();
-    this.gameBackground.src = 'image/theater.jpg';
-    // 绘制陆地
-    this.yardImage = new Image();
-    this.yardImage.src = 'image/restaurantyard.jpg';
-    // 陆地高度
-    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
-    // 创建返回按钮
-    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
-      if (this.lastLifeCount == 0) {
-        wx.setStorageSync('lifeCount', 2);
-        wx.setStorageSync('trailNumber', '')
-      }
-      this.gameOver = true;
-      this.game.switchScene(new this.game.startup(this.game));
-    });
-    // 绘制圆球
-    this.circle = {
-      radius: 10,
-      x: this.canvas.width / 2,
-      y: 100,
-      speedX: this.canvas.width * 0.005,
-      speedY: this.canvas.height * 0.005,
-      show: true
-    }
-    // 设置边界
-    this.boundary = {
-      top: 0,
-      bottom: menuButtonInfo.bottom + this.canvas.height * 0.5 + 6,
-      left: 0,
-      right: this.canvas.width
-    };
+    /* 加载音乐音效管理器结束 */
+    /* 常量设置区域开始 */
+    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
     // 绘制人物
     this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
-      y: this.groundHeight,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
+      y: this.groundHeightChange,
+      speed: 1 * scaleX, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
       leftJumpFrames: [], // 存储向左弹跳图片的数组
@@ -75,15 +50,102 @@ export default class Eighth {
       jumping: false,
       jumpStartY: 0,
       jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      jumpHeight: 35 * scaleY, // 跳跃高度
       gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isCollisionCircle: false
     };
+    // 绘制冲击波
+    this.cycleInfo = {
+      cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
+      direction: ''
+    }
+    // 绘制圆球
+    this.circle = {
+      radius: 10 * scaleY,
+      x: this.canvas.width / 2,
+      y: 100,
+      speedX: 2 * scaleX,
+      speedY: 2 * scaleY,
+      show: true
+    }
+    // 设置边界
+    this.boundary = {
+      top: 0,
+      bottom: menuButtonInfo.bottom + this.canvas.height * 0.5,
+      left: 0,
+      right: this.canvas.width
+    };
+    this.transportInfo = {
+      x: 0,
+      y: this.groundHeight + 10 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      show: false
+    }
+    this.handBallInfo = {
+      x: 18 * scaleX,
+      y: this.groundHeight - 50 * scaleY,
+      width: 16 * scaleY,
+      height: 16 * scaleY,
+      show: false
+    }
+    this.recInfo = {
+      x: this.canvas.width - 60 * scaleX,
+      y: this.groundHeight / 2,
+      width: 60 * scaleX,
+      height: 10 * scaleY,
+      show: false,
+      item: 1,
+      recSound: false
+    }
+    this.gearInfo = {
+      x: this.canvas.width - 32 * scaleX,
+      y: this.groundHeight,
+      width: 32 * scaleX,
+      height: 32 * scaleY,
+      statue: 'left',
+      sound: false,
+    }
+    this.endDoorStatue = {
+      x: this.canvas.width - 64 * scaleX,
+      y: this.groundHeight / 2 - 64 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      velocityY: 0,
+      gravity: 0.3,
+      show: false
+    }
+    // 记录生命总数
+    this.lastLifeCount = null;
+    this.pressingDirection = null;
+    // 记录倒计时时间
+    this.clockDownTime = 90;
+    // 只运行一次
+    this.runLimit = 1;
+    this.gameOver = false;
+    this.gameWin = false;
+    // 重新开始按钮
+    this.buttonStartInfo = "";
+    // 分享好友按钮
+    this.buttonShareInfo = "";
+    this.clearSetInterval = '';
+    this.context.font = `${20 * scaleX}px Arial`;
+    /* 常量设置区域结束 */
+    /* 图片加载区域开始 */
+    this.gameBackground = new Image();
+    this.gameBackground.src = 'image/theater.jpg';
+    this.backButton = '';
+    this.yardImage = new Image();
+    this.yardImage.src = 'image/restaurantyard.jpg';
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
@@ -92,7 +154,7 @@ export default class Eighth {
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png', 'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
@@ -140,94 +202,39 @@ export default class Eighth {
       frame.src = path;
       this.character.leftDown.push(frame);
     }
-    // 绘制发出的冲击波图片
+    // 加载陷阱图片
+    this.platform = [
+      'image/cave.png',
+      'image/rock.png',
+      'image/cave.png',
+    ].map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
     this.cycleImage = new Image();
     this.cycleImage.src = 'image/cycle.png';
-    this.cycleSpeed = systemInfo.screenWidth * 0.005;
-    this.cycleAddDistence = 0;
-    this.cycleAddHeight = 0;
-    this.angle = 0; // 冲击波旋转角度
-    this.cycleX = 0; // 记录发出冲击波的初始位置
-    this.direction = ''; //记录冲击波的方向
-    // 绘制终点的图片
-    this.endDoorImage = new Image();
-    this.endDoorImage.src = 'image/doorbreak.png';
-    this.endDoorStatue = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight / 2 - 64,
-      width: 64,
-      height: 64,
-      velocityY: 0,
-      gravity: 0.3,
-      show: false
-    }
-    // 绘制机关左的图片
-    this.leftGear = new Image();
-    this.leftGear.src = 'image/joystickleft.png';
-    // 绘制机关右的图片
-    this.rightGear = new Image();
-    this.rightGear.src = 'image/joystickright.png';
-    // 判断机关状态
-    this.gearStatue = 'left';
-    // 是否让机关响起了
-    this.gearSound = false;
-    // 绘制时间魔法阵
     this.transport = new Image();
     this.transport.src = 'image/transport.png';
-    this.transportInfo = {
-      x: 0,
-      y: this.groundHeight + 10,
-      width: 64,
-      height: 64,
-      show: false
-    }
-    // 绘制手提示
     this.handBall = new Image();
     this.handBall.src = 'image/hand.png';
-    this.handBallInfo = {
-      x: 24,
-      y: this.groundHeight - 50,
-      width: 16,
-      height: 16,
-      show: false
-    }
-    // 平台信息
-    this.recInfo = {
-      x: this.canvas.width - 60,
-      y: this.groundHeight / 2,
-      width: 60,
-      height: 10,
-      show: false,
-      item: 1,
-      recSound: false
-    }
-    // 绘制生命数显示
+    this.endDoorImage = new Image();
+    this.endDoorImage.src = 'image/doorbreak.png';
     this.lifeCount = new Image();
     this.lifeCount.src = 'image/head.png';
-    // 记录生命总数
-    this.lastLifeCount = null;
-    // 绘制倒计时图片显示
     this.clockDown = new Image();
     this.clockDown.src = 'image/clock.png';
-    // 记录倒计时时间
-    this.clockDownTime = 90;
-    // 只运行一次
-    this.runLimit = 1;
-    // 添加触摸事件监听
-    wx.onTouchStart(this.touchStartHandler.bind(this));
-    wx.onTouchEnd(this.touchEndHandler.bind(this));
-    this.pressingDirection = null; // 记录当前长按的方向键
-    this.gameOver = false; // 记录游戏是否结束
-    this.gameWin = false; //记录游戏是否胜利
-    // 重新开始按钮
-    this.buttonStartInfo = "";
-    // 分享好友按钮
-    this.buttonShareInfo = "";
-    // 加载失败图片
+    this.leftGear = new Image();
+    this.leftGear.src = 'image/joystickleft.png';
+    this.rightGear = new Image();
+    this.rightGear.src = 'image/joystickright.png';
     this.failTipsImage = new Image();
     this.failTipsImage.src = 'image/gameovertips.png';
-    this.context.font = '20px Arial';
-    this.clearSetInterval = '';
+    /* 图片加载区域结束 */
+    /* 事件处理监听绑定开始 */
+    wx.onTouchStart(this.touchStartHandler.bind(this));
+    wx.onTouchEnd(this.touchEndHandler.bind(this));
+    /* 事件处理监听绑定结束 */
   }
   // 绘制背景
   drawBackground() {
@@ -236,6 +243,9 @@ export default class Eighth {
   }
   // 绘制返回按钮
   drawBack() {
+    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+      this.game.switchScene(new this.game.startup(this.game));
+    });
     if (this.backButton.image.complete) {
       this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y);
     }
@@ -245,7 +255,7 @@ export default class Eighth {
     const number = '08';
     const textWidth = this.context.measureText(number).width;
     const startX = this.canvas.width - textWidth - 10;
-    const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
+    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
     this.context.save();
     this.context.fillStyle = '#ffffff99';
     this.context.textAlign = 'left'; // 文本左对齐
@@ -255,8 +265,8 @@ export default class Eighth {
   }
   // 绘制倒计时
   startCountdown() {
-    const iconSize = 24; // 图标大小
-    const iconPadding = 10; // 图标与分数之间的间距
+    const iconSize = 24 * scaleY; // 图标大小
+    const iconPadding = 10 * scaleX; // 图标与分数之间的间距
     // 计算分数文本的宽度
     const textWidth = this.context.measureText(this.clockDownTime.toString().padStart(2, '0')).width;
     // 计算总宽度（图标宽度 + 间距 + 文本宽度）
@@ -265,8 +275,8 @@ export default class Eighth {
     const startX = (this.canvas.width - totalWidth) / 2;
     const iconX = startX;
     const clockDownX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.top + 6; // 图标的y坐标
-    const clockDownY = menuButtonInfo.top + 20; // 分数的y坐标
+    const iconY = menuButtonInfo.top + 6 * scaleY; // 图标的y坐标
+    const clockDownY = menuButtonInfo.top + 20 * scaleY; // 分数的y坐标
     // 绘制图标
     if (this.clockDown.complete) {
       this.context.drawImage(this.clockDown, iconX, iconY, iconSize, iconSize);
@@ -282,14 +292,14 @@ export default class Eighth {
   drawLifeCount() {
     // 记录生命总数
     this.lastLifeCount = wx.getStorageSync('lifeCount');
-    const iconSize = 32; // 图标大小
-    const iconPadding = 10; // 图标与分数之间的间距
+    const iconSize = 32 * scaleY; // 图标大小
+    const iconPadding = 10 * scaleX; // 图标与分数之间的间距
     // 计算分数文本的宽度
     const startX = 10;
     const iconX = startX;
     const scoreX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.bottom + 2; // 图标的y坐标
-    const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
+    const iconY = menuButtonInfo.bottom + 2 * scaleY; // 图标的y坐标
+    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
     // 绘制图标
     if (this.lifeCount.complete) {
       this.context.drawImage(this.lifeCount, iconX, iconY, iconSize, iconSize);
@@ -302,182 +312,51 @@ export default class Eighth {
     this.context.fillText(`X${this.lastLifeCount}`, scoreX, scoreY);
     this.context.restore();
   }
-  // 绘制游戏活动区域
-  drawActionZone() {
-    // 保存当前context状态
-    this.context.save();
-    // 绘制黑色矩形
-    const rectHeight = this.canvas.height * 0.6;
-    this.context.fillStyle = '#000000'; // 黑色
-    this.context.fillRect(0, 0, this.canvas.width, rectHeight);
-    this.context.restore();
-  }
   // 绘制游戏背景
   drawGameBackground() {
     if (this.gameBackground.complete) {
-      this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
+      this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6)
     }
   }
   // 绘制陆地
   drawYard() {
     if (this.yardImage.complete) {
-      this.context.drawImage(this.yardImage, 0, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width, this.canvas.height * 0.1)
+      this.context.drawImage(this.yardImage, 0, menuButtonInfo.bottom + this.canvas.height * 0.5, this.canvas.width, this.canvas.height * 0.1)
     }
   }
   // 绘制机关
   drawGear() {
-    if (this.gearStatue == 'left') {
+    if (this.gearInfo.statue == 'left') {
       if (this.leftGear.complete) {
-        this.context.drawImage(this.leftGear, this.canvas.width - this.leftGear.width, this.groundHeight, this.leftGear.width, this.leftGear.height);
+        this.context.drawImage(this.leftGear, this.gearInfo.x, this.gearInfo.y, this.gearInfo.width, this.gearInfo.height);
       }
     } else {
       if (this.rightGear.complete) {
-        this.context.drawImage(this.rightGear, this.canvas.width - this.rightGear.width, this.groundHeight, this.rightGear.width, this.rightGear.height);
+        this.context.drawImage(this.rightGear, this.gearInfo.x, this.gearInfo.y, this.gearInfo.width, this.gearInfo.height);
       }
     }
   }
   // 绘制魔法阵
   drawTransport() {
-    if (this.transportInfo.show) {
-      if (this.transport.complete) {
-        this.context.drawImage(this.transport, this.transportInfo.x, this.transportInfo.y - this.transportInfo.height / 2, this.transportInfo.width, this.transportInfo.height);
-      }
+    if (this.transport.complete && this.transportInfo.show) {
+      this.context.drawImage(this.transport, this.transportInfo.x, this.transportInfo.y - this.transportInfo.height / 2, this.transportInfo.width, this.transportInfo.height);
     }
   }
   // 绘制手提示
   drawHandBall() {
-    if (this.handBallInfo.show){
-      if (this.handBall.complete) {
-        this.context.save();
-        this.context.globalAlpha = 0.5;
-        this.context.drawImage(this.handBall, this.handBallInfo.x, this.handBallInfo.y, this.handBallInfo.width, this.handBallInfo.height);
-        this.context.restore();
-      }
+    if (this.handBall.complete && this.handBallInfo.show) {
+      this.context.save();
+      this.context.globalAlpha = 0.5;
+      this.context.drawImage(this.handBall, this.handBallInfo.x, this.handBallInfo.y, this.handBallInfo.width, this.handBallInfo.height);
+      this.context.restore();
     }
   }
   // 手状态更新
   updateHandBall() {
-    if (this.character.x <= 64 && this.transportInfo.show){
+    if (this.character.x <= 32 * scaleX && this.transportInfo.show){
       this.handBallInfo.show = true;
     }else{
       this.handBallInfo.show = false;
-    }
-  }
-  // 绘制终点
-  drawEndDoor() {
-    if (this.endDoorImage.complete && this.endDoorStatue.show) {
-      this.context.drawImage(this.endDoorImage, this.endDoorStatue.x, this.endDoorStatue.y, this.endDoorStatue.width, this.endDoorStatue.height)
-    }
-  }
-  // 更新终点变化
-  updateEndDoor() {
-    if (this.recInfo.item == 0 && this.endDoorStatue.y < this.groundHeight - 32) {
-      this.endDoorStatue.velocityY += this.endDoorStatue.gravity;
-      this.endDoorStatue.y += this.endDoorStatue.velocityY;
-    }
-  }
-  // 绘制人物
-  drawCharacter() {
-    let characterImg;
-    if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
-      if (this.character.isShot) {
-        characterImg = this.character.rightShotFrames[this.character.currentRightShotIndex]
-      } else {
-        if (this.character.isOnGround) {
-          characterImg = this.character.rightFrames[this.character.currentRightFrameIndex];
-        } else {
-          if (this.gameOver) {
-            characterImg = this.character.rightDown[0];
-          } else {
-            characterImg = this.character.gravity > 0 ? this.character.rightJumpFrames[0] : this.character.rightJumpFrames[1];
-          }
-        }
-      }
-      this.context.drawImage(characterImg, this.character.x, this.character.y, characterImg.width / 2, characterImg.height / 2);
-    } else if (this.character.theLastAction == 'left') {
-      if (this.character.isShot) {
-        characterImg = this.character.leftShotFrames[this.character.currentLeftShotIndex]
-      } else {
-        if (this.character.isOnGround) {
-          characterImg = this.character.leftFrames[this.character.currentLeftFrameIndex];
-        } else {
-          if (this.gameOver) {
-            characterImg = this.character.leftDown[0];
-          } else {
-            characterImg = this.character.gravity > 0 ? this.character.leftJumpFrames[0] : this.character.leftJumpFrames[1];
-          }
-        }
-      }
-      this.context.drawImage(characterImg, this.character.x, this.character.y, characterImg.width / 2, characterImg.height / 2);
-    }
-  }
-  // 更新绘制人物
-  updateCharacter() {
-    // 记录人物之前的位置
-    if (this.pressingDirection == 'right') {
-      this.moveRightCharacter();
-    } else if (this.pressingDirection == 'left') {
-      this.moveLeftCharacter();
-    }
-    // 判断是否处于跳跃
-    if (this.character.jumping) {
-      if (this.groundHeight - this.character.y > this.character.jumpHeight) {
-        this.character.gravity = -0.3;
-      }
-      this.character.velocityY -= this.character.gravity;
-      this.character.y += this.character.velocityY;
-      // 如果达到地面，结束跳跃
-      if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
-        this.character.jumping = false;
-        this.character.isOnGround = true;
-        this.character.y = this.groundHeight;
-        this.character.velocityY = 0;
-        this.character.jumpStartY = 0;
-        this.character.jumpHeight = this.canvas.height * 0.06;
-      }
-    }
-    // 判断是否与圆球碰撞
-    if (circleRectCollision(this.circle, this.character)) {
-      this.character.isCollisionCircle = true;
-    } else {
-      this.character.isCollisionCircle = false;
-    }
-    // 判断是否与机关碰撞
-    if (this.character.x + this.character.width <= this.canvas.width && this.character.x >= this.canvas.width - this.leftGear.width && this.character.y + this.character.height >= this.groundHeight && this.character.y <= this.groundHeight + this.leftGear.height) {
-      this.gearStatue = 'right';
-      this.transportInfo.show = true;
-      if (!this.gearSound) {
-        soundManager.play('gear');
-        this.gearSound = true;
-      }
-    }
-    // 判断是否与终点碰撞
-    if (checkRectangleCollision(this.character, this.endDoorStatue) && this.endDoorStatue.show) {
-      clearInterval(this.clearSetInterval);
-      this.gameWin = true;
-      soundManager.play('win');
-      backgroundMusic.stopBackgroundMusic();
-      // 前往下一关卡
-      wx.setStorageSync('trailNumber', 8)
-      this.game.switchScene(new this.game.ninth(this.game));
-    } else {
-      this.gameWin = false;
-    }
-  }
-  // 绘制平台
-  drawRec() {
-    if (this.circle.speedX == 0 && this.recInfo.show && this.recInfo.item == 1) {
-      const stripeWidth = 60 / 7;
-      this.context.save();
-      this.context.strokeStyle = 'black'; // 设置描边颜色为黑色
-      this.context.lineWidth = 2; // 设置描边宽度为2px
-      this.context.strokeRect(this.recInfo.x, this.recInfo.y, this.recInfo.width, this.recInfo.height);
-      // 绘制七个小矩形，每个小矩形都使用不同的彩虹色
-      for (let i = 0; i < 7; i++) {
-        this.context.fillStyle = getRainbowColor(i);
-        this.context.fillRect(this.recInfo.x + i * stripeWidth, this.recInfo.y, stripeWidth, this.recInfo.height);
-      }
-      this.context.restore();
     }
   }
   // 绘制圆球
@@ -504,23 +383,23 @@ export default class Eighth {
         this.circle.x += this.circle.speedX;
         this.circle.y += this.circle.speedY;
       } else {
-        if (this.circle.x <= 64 && this.transportInfo.show) {
+        if (this.circle.x <= 64 * scaleX && this.transportInfo.show) {
           this.circle.speedX = 0;
           this.endDoorStatue.show = true;
           this.recInfo.show = true;
           this.endDoorStatue.x -= this.character.speed;
           this.recInfo.x -= this.character.speed;
-          if (this.endDoorStatue.x < -64) {
+          if (this.endDoorStatue.x < -64 * scaleX) {
             this.endDoorStatue.x = this.canvas.width;
           }
-          if (this.recInfo.x < -64) {
+          if (this.recInfo.x < -64 * scaleX) {
             this.recInfo.x = this.canvas.width;
           }
         } else {
           this.endDoorStatue.show = false;
           this.recInfo.show = false;
-          this.circle.speedX = this.canvas.width * 0.005;
-          this.circle.speedY = this.canvas.height * 0.005;
+          this.circle.speedX = 2 * scaleX;
+          this.circle.speedY = 2 * scaleY;
           this.circle.speedX = -this.circle.speedX;
           this.circle.speedY = -this.circle.speedY;
           this.circle.x += this.circle.speedX;
@@ -548,28 +427,145 @@ export default class Eighth {
       }
     }
   }
+  // 绘制终点
+  drawEndDoor() {
+    if (this.endDoorImage.complete && this.endDoorStatue.show) {
+      this.context.drawImage(this.endDoorImage, this.endDoorStatue.x, this.endDoorStatue.y, this.endDoorStatue.width, this.endDoorStatue.height)
+    }
+  }
+  // 更新终点变化
+  updateEndDoor() {
+    if (this.recInfo.item == 0 && this.endDoorStatue.y < this.groundHeight - 32 * scaleY) {
+      this.endDoorStatue.velocityY += this.endDoorStatue.gravity;
+      this.endDoorStatue.y += this.endDoorStatue.velocityY;
+    }
+  }
+  // 绘制人物
+  drawCharacter() {
+    let characterImg;
+    if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
+      if (this.character.isShot) {
+        characterImg = this.character.rightShotFrames[this.character.currentRightShotIndex]
+      } else {
+        if (this.character.isOnGround) {
+          characterImg = this.character.rightFrames[this.character.currentRightFrameIndex];
+        } else {
+          if (this.gameOver) {
+            characterImg = this.character.rightDown[0];
+          } else {
+            characterImg = this.character.gravity > 0 ? this.character.rightJumpFrames[0] : this.character.rightJumpFrames[1];
+          }
+        }
+      }
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
+    } else if (this.character.theLastAction == 'left') {
+      if (this.character.isShot) {
+        characterImg = this.character.leftShotFrames[this.character.currentLeftShotIndex]
+      } else {
+        if (this.character.isOnGround) {
+          characterImg = this.character.leftFrames[this.character.currentLeftFrameIndex];
+        } else {
+          if (this.gameOver) {
+            characterImg = this.character.leftDown[0];
+          } else {
+            characterImg = this.character.gravity > 0 ? this.character.leftJumpFrames[0] : this.character.leftJumpFrames[1];
+          }
+        }
+      }
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
+    }
+  }
+  // 更新绘制人物
+  updateCharacter() {
+    // 记录人物之前的位置
+    if (this.pressingDirection == 'right' && !this.character.isFall) {
+      this.moveRightCharacter();
+    } else if (this.pressingDirection == 'left' && !this.character.isFall) {
+      this.moveLeftCharacter();
+    }
+    // 判断是否处于跳跃
+    if (this.character.jumping) {
+      this.character.velocityY -= this.character.gravity;
+      this.character.y += this.character.velocityY;
+      if (this.groundHeightChange - this.character.y > this.character.jumpHeight) {
+        this.character.gravity = -0.3;
+      }
+      // 如果达到地面，结束跳跃
+      if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
+        this.character.jumping = false;
+        this.character.isOnGround = true;
+        this.character.y = this.groundHeightChange;
+        this.character.velocityY = 0;
+        this.character.jumpStartY = 0;
+        this.character.jumpHeight = 35 * scaleY;
+      }
+    }
+    // 判断是否与圆球碰撞
+    if (circleRectCollision(this.circle, this.character)) {
+      this.character.isCollisionCircle = true;
+    } else {
+      this.character.isCollisionCircle = false;
+    }
+    // 判断是否与机关碰撞
+    if (this.character.x + this.character.width >= this.gearInfo.x + 10 * scaleX && this.character.x <= this.gearInfo.x + this.gearInfo.width - 10 * scaleX && this.character.y + this.character.height >= this.gearInfo.y && this.character.y <= this.gearInfo.y + this.gearInfo.height) {
+      this.gearInfo.statue = 'right';
+      this.transportInfo.show = true;
+      if (!this.gearInfo.sound) {
+        soundManager.play('gear');
+        this.gearInfo.sound = true;
+      }
+    }
+    // 判断是否与终点碰撞
+    if (this.character.x <= this.endDoorStatue.x + this.endDoorStatue.width * 2 / 3 && this.character.x + this.character.width >= this.endDoorStatue.x + this.endDoorStatue.width / 3 && this.character.y <= this.endDoorStatue.y + this.endDoorStatue.height && this.character.y + this.character.height >= this.endDoorStatue.y && this.endDoorStatue.show) {
+      clearInterval(this.clearSetInterval);
+      this.gameWin = true;
+      soundManager.play('win');
+      backgroundMusic.stopBackgroundMusic();
+      // 前往下一关卡
+      wx.setStorageSync('trailNumber', 8)
+      this.game.switchScene(new this.game.ninth(this.game));
+    } else {
+      this.gameWin = false;
+    }
+  }
+  // 绘制平台
+  drawRec() {
+    if (this.circle.speedX == 0 && this.recInfo.show && this.recInfo.item == 1) {
+      const stripeWidth = 60 * scaleX / 7;
+      this.context.save();
+      this.context.strokeStyle = 'black'; // 设置描边颜色为黑色
+      this.context.lineWidth = 2; // 设置描边宽度为2px
+      this.context.strokeRect(this.recInfo.x, this.recInfo.y, this.recInfo.width, this.recInfo.height);
+      // 绘制七个小矩形，每个小矩形都使用不同的彩虹色
+      for (let i = 0; i < 7; i++) {
+        this.context.fillStyle = getRainbowColor(i);
+        this.context.fillRect(this.recInfo.x + i * stripeWidth, this.recInfo.y, stripeWidth, this.recInfo.height);
+      }
+      this.context.restore();
+    }
+  }
   // 绘制冲击波
   drawCycleWave() {
     if (this.character.shotWave) {
-      if (this.direction == 'right') {
+      if (this.cycleInfo.direction == 'right') {
         if (this.cycleImage.complete) {
           this.context.save();
-          this.context.translate(this.cycleX + 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
-          this.context.rotate(this.angle);
-          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.translate(this.cycleInfo.cycleX + 18 * scaleX + this.cycleInfo.cycleAddDistence, this.cycleInfo.cycleAddHeight + 8 * scaleY);
+          this.context.rotate(this.cycleInfo.angle);
+          this.context.drawImage(this.cycleImage, -8 * scaleY, -8 * scaleY, 16 * scaleY, 16 * scaleY);
           this.context.restore();
           // 增加角度以实现旋转
-          this.angle += 0.05;
+          this.cycleInfo.angle += 0.05;
         }
-      } else if (this.direction == 'left') {
+      } else if (this.cycleInfo.direction == 'left') {
         if (this.cycleImage.complete) {
           this.context.save();
-          this.context.translate(this.cycleX - 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
-          this.context.rotate(this.angle);
-          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.translate(this.cycleInfo.cycleX - 18 * scaleX + this.cycleInfo.cycleAddDistence, this.cycleInfo.cycleAddHeight + 8 * scaleY);
+          this.context.rotate(this.cycleInfo.angle);
+          this.context.drawImage(this.cycleImage, -8 * scaleY, -8 * scaleY, 16 * scaleY, 16 * scaleY);
           this.context.restore();
           // 增加角度以实现旋转
-          this.angle += 0.05;
+          this.cycleInfo.angle += 0.05;
         }
       }
     }
@@ -577,23 +573,23 @@ export default class Eighth {
   // 更新冲击波
   updateCycleWave() {
     if (this.character.shotWave) {
-      if (this.direction == 'right') {
-        if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20) {
+      if (this.cycleInfo.direction == 'right') {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence >= this.canvas.width - 20 * scaleX) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
-          this.angle = 0;
-          this.direction = '';
+          this.cycleInfo.cycleAddDistence = 0;
+          this.cycleInfo.angle = 0;
+          this.cycleInfo.direction = '';
         } else {
-          this.cycleAddDistence += this.cycleSpeed;
+          this.cycleInfo.cycleAddDistence += this.cycleInfo.speed;
         }
-      } else if (this.direction == 'left') {
-        if (this.cycleX + this.cycleAddDistence <= 20) {
+      } else if (this.cycleInfo.direction == 'left') {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence <= 20 * scaleX) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
-          this.angle = 0;
-          this.direction = '';
+          this.cycleInfo.cycleAddDistence = 0;
+          this.cycleInfo.angle = 0;
+          this.cycleInfo.direction = '';
         } else {
-          this.cycleAddDistence -= this.cycleSpeed;
+          this.cycleInfo.cycleAddDistence -= this.cycleInfo.speed;
         }
       }
     }
@@ -607,17 +603,16 @@ export default class Eighth {
     const arrowSize = joystickSize * 0.5;
     // 绘制方向键（D-Pad）
     const padSize = joystickSize * 0.6;
-    const buttonSize = padSize * 1 + 4;
-    // 保存当前context状态
+    const buttonSize = padSize;
     this.context.save();
     // 上方向键
-    this.drawRectangle(23 + arrowSize, joystickY - padSize / 2 - buttonSize, buttonSize, 'up');
+    this.drawRectangle(10 + arrowSize * 4 / 3, joystickY - padSize / 2 - buttonSize, buttonSize, 'up');
     // 下方向键
-    this.drawRectangle(23 + arrowSize, joystickY + padSize / 2, buttonSize, 'down');
+    this.drawRectangle(10 + arrowSize * 4 / 3, joystickY + padSize / 2, buttonSize, 'down');
     // 左方向键
-    this.drawRectangle(13, joystickY - buttonSize / 2, buttonSize, 'left');
+    this.drawRectangle(10, joystickY - buttonSize / 2, buttonSize, 'left');
     // 右方向键
-    this.drawRectangle(33 + arrowSize * 2, joystickY - buttonSize / 2, buttonSize, 'right');
+    this.drawRectangle(10 + arrowSize * 8 / 3, joystickY - buttonSize / 2, buttonSize, 'right');
     // 绘制跳跃键
     this.drawRectangle(menuButtonInfo.right - buttonSize, joystickY - padSize / 2 - buttonSize / 2, buttonSize, 'jump');
     // 绘制发射键
@@ -640,12 +635,12 @@ export default class Eighth {
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
     } else if (direction == 'jump') {
-      this.context.fillStyle = '#ff880077';
+      this.context.fillStyle = '#ffffff77';
       this.context.beginPath();
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
     } else if (direction == 'shot') {
-      this.context.fillStyle = '#00ff9977';
+      this.context.fillStyle = '#ffffff77';
       this.context.beginPath();
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
@@ -680,10 +675,10 @@ export default class Eighth {
         this.context.lineTo(x + size / 2 - arrowSize / 2, y + size / 2 + arrowSize / 2);
         break;
       case 'jump':
-        this.context.fillText('J', x + size / 2, y + size / 2 + 2);
+        this.context.fillText('J', x + size / 2, y + size / 2 + 2 * scaleY);
         break;
       case 'shot':
-        this.context.fillText('S', x + size / 2, y + size / 2 + 2);
+        this.context.fillText('S', x + size / 2, y + size / 2 + 2 * scaleY);
         break;
     }
     this.context.closePath();
@@ -693,8 +688,6 @@ export default class Eighth {
   draw() {
     // 绘制背景
     this.drawBackground();
-    // 绘制游戏活动区域
-    this.drawActionZone();
     // 绘制移动按钮所在区域
     this.drawJoystick();
     // 绘制游戏背景
@@ -707,14 +700,14 @@ export default class Eighth {
     this.drawTransport();
     // 绘制手提示
     this.drawHandBall();
+    // 绘制圆球
+    this.drawCircle();
+    // 绘制平台
+    this.drawRec();
     // 绘制终点
     this.drawEndDoor();
     // 绘制人物
     this.drawCharacter();
-    // 绘制平台
-    this.drawRec();
-    // 绘制圆球
-    this.drawCircle();
     // 绘制冲击波
     this.drawCycleWave();
     // 绘制返回按钮
@@ -731,29 +724,28 @@ export default class Eighth {
     if (this.gameOver || this.gameWin) {
       backgroundMusic.stopBackgroundMusic();
       if (this.lastLifeCount == 0) {
-        // 绘制失败场景和按钮
         if (this.failTipsImage.complete) {
-          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width) / 2, (this.canvas.height - this.failTipsImage.height) / 2 - this.failTipsImage.height / 2);
+          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width * scaleX) / 2, (this.canvas.height - this.failTipsImage.height * scaleY) / 2 - this.failTipsImage.height * scaleY / 2, this.failTipsImage.width * scaleX, this.failTipsImage.height * scaleY);
         }
-        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40);
-        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110);
+        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40 * scaleY);
+        this.buttonNextInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110 * scaleY);
       }
     } else {
       let self = this;
+      // 更新冲击波
+      this.updateCycleWave();
       // 更新圆球位置
       this.updateCircle();
       // 手状态更新
       this.updateHandBall();
       // 更新终点变化
-      this.updateEndDoor()
-      // 更新冲击波
-      this.updateCycleWave();
+      this.updateEndDoor();
       // 更新人物动态
       this.updateCharacter();
       // 更新倒计时运行
-      if (this.runLimit >= 1) {
+      if (this.runLimit >= 1){
         this.runLimit--;
-        this.clearSetInterval = setInterval(function () {
+        this.clearSetInterval = setInterval(function() {
           self.countdownFunc();
         }, 1000);
       }
@@ -793,7 +785,12 @@ export default class Eighth {
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
       clearInterval(this.clearSetInterval);
+      this.gameOver = true;
       backgroundMusic.stopBackgroundMusic();
+      if (this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
       btn.onClick();
       return
     }
@@ -826,35 +823,37 @@ export default class Eighth {
     // 绘制方向键（矩形）
     const arrowSize = joystickSize * 0.5;
     const padSize = joystickSize * 0.6;
-    const buttonSize = padSize * 1;
+    const buttonSize = padSize;
     // 当游戏结束时无返回值
     if (this.gameOver || this.gameWin) {
       return;
     }
     // 判断点击位置是否在方向键上
     if (
-      touchX >= 23 + arrowSize && touchX <= 23 + arrowSize + buttonSize &&
+      touchX >= 10 + arrowSize * 4 / 3 && touchX <= 10 + arrowSize * 4 / 3 + buttonSize &&
       touchY >= joystickY - padSize / 2 - buttonSize && touchY <= joystickY - padSize / 2
     ) {
       // 上方向键
       // this.pressingDirection = 'up';
       // this.character.theLastAction = 'up';
     } else if (
-      touchX >= 23 + arrowSize && touchX <= 23 + arrowSize + buttonSize &&
+      touchX >= 10 + arrowSize * 4 / 3 && touchX <= 10 + arrowSize * 4 / 3 + buttonSize &&
       touchY >= joystickY + padSize / 2 && touchY <= joystickY + padSize / 2 + buttonSize
     ) {
       // 停止行为
       this.stopAction();
     } else if (
-      touchX >= 13 && touchX <= 13 + buttonSize &&
-      touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2) {
+      touchX >= 10 && touchX <= 10 + buttonSize &&
+      touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2 && !this.character.isFall
+    ) {
       // 左方向键
       this.pressingDirection = 'left';
       this.character.theLastAction = 'left';
       this.moveLeftCharacter();
     } else if (
-      touchX >= 33 + arrowSize * 2 && touchX <= 33 + arrowSize * 2 + buttonSize &&
-      touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2) {
+      touchX >= 10 + arrowSize * 8 / 3 && touchX <= 10 + arrowSize * 8 / 3 + buttonSize &&
+      touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2 && !this.character.isFall
+    ) {
       // 右方向键
       this.pressingDirection = 'right';
       this.character.theLastAction = 'right';
@@ -874,7 +873,7 @@ export default class Eighth {
       }
     } else if (
       touchX >= menuButtonInfo.right - buttonSize && touchX <= menuButtonInfo.right &&
-      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2) {
+      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2 && !this.character.isFall) {
       // 跳跃
       this.jumpHandler();
       soundManager.play('jump');
@@ -900,14 +899,14 @@ export default class Eighth {
   // 向右移动动作
   moveRightCharacter() {
     this.character.x += this.character.speed;
-    if (this.character.x >= this.canvas.width - 20) {
-      this.character.x = this.canvas.width - 20
+    if (this.character.x >= this.canvas.width - this.character.width) {
+      this.character.x = this.canvas.width - this.character.width;
     }
     if (this.character.isCollisionCircle) {
       this.circle.x += this.character.speed;
-    }
-    if (this.circle.x + 10 >= this.canvas.width) {
-      this.circle.x = this.canvas.width - 10;
+      if (this.circle.x + 10 * scaleX >= this.canvas.width) {
+        this.circle.x = this.canvas.width - 10 * scaleX;
+      }
     }
     this.character.currentRightFrameIndex = (this.character.currentRightFrameIndex + 1) % this.character.rightFrames.length;
   }
@@ -919,9 +918,9 @@ export default class Eighth {
     }
     if (this.character.isCollisionCircle) {
       this.circle.x -= this.character.speed;
-    }
-    if (this.circle.x - 10 <= 0) {
-      this.circle.x = 10;
+      if (this.circle.x - 10 * scaleX <= 0) {
+        this.circle.x = 10 * scaleX;
+      }
     }
     this.character.currentLeftFrameIndex = (this.character.currentLeftFrameIndex + 1) % this.character.leftFrames.length;
   }
@@ -931,74 +930,59 @@ export default class Eighth {
       this.character.currentRightShotIndex = (this.character.currentRightShotIndex + 1) % this.character.rightShotFrames.length;
       this.character.currentLeftShotIndex = (this.character.currentLeftShotIndex + 1) % this.character.leftShotFrames.length;
       this.character.shotWave = true;
-      this.cycleAddHeight = this.character.y;
+      this.cycleInfo.cycleAddHeight = this.character.y;
       if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
-        this.cycleX = this.character.x;
-        this.direction = 'right';
+        this.cycleInfo.cycleX = this.character.x;
+        this.cycleInfo.direction = 'right';
       } else if (this.character.theLastAction == 'left') {
-        this.cycleX = this.character.x + 18;
-        this.direction = 'left';
+        this.cycleInfo.cycleX = this.character.x + 18 * scaleX;
+        this.cycleInfo.direction = 'left';
       }
     }
   }
   // 瞬移的事件处理
   toWave() {
     if (this.character.theLastAction == 'left') {
-      this.character.x = this.cycleX - 24 + this.cycleAddDistence;
+      this.character.x = this.cycleInfo.cycleX - 24 * scaleX + this.cycleInfo.cycleAddDistence;
     } else if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
-      this.character.x = this.cycleX + this.cycleAddDistence;
+      this.character.x = this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence;
     }
-    this.character.y = this.cycleAddHeight
+    this.character.y = this.cycleInfo.cycleAddHeight
     this.character.shotWave = false;
-    this.cycleAddDistence = 0;
-    this.angle = 0;
-    this.direction = '';
-    this.cycleX = 0;
+    this.cycleInfo.cycleAddDistence = 0;
+    this.cycleInfo.angle = 0;
+    this.cycleInfo.direction = '';
+    this.cycleInfo.cycleX = 0;
     if (this.character.y == this.groundHeight) {
       this.character.isOnGround = true;
       this.character.jumping = false;
     } else {
       this.character.isOnGround = false;
       this.character.jumping = true;
-      this.character.jumpStartY = this.groundHeight;
-      this.character.jumpHeight = this.groundHeight - this.cycleAddHeight;
+      this.groundHeightChange = this.groundHeight;
+      this.character.jumpStartY = this.groundHeightChange;
     }
+    this.character.isFall = false;
   }
   // 跳跃的事件处理
   jumpHandler() {
     if (!this.character.jumping) {
       this.character.jumping = true;
       this.character.isOnGround = false;
-      this.character.jumpStartY = this.character.y;
+      this.character.jumpStartY = this.groundHeightChange;
       this.character.gravity = 0.3;
     }
   }
   // 重置游戏
   resetGame() {
     backgroundMusic.playBackgroundMusic();
-    // 绘制圆球
-    this.circle = {
-      radius: 10,
-      x: this.canvas.width / 2,
-      y: 100,
-      speedX: this.canvas.width * 0.005,
-      speedY: this.canvas.height * 0.005,
-      show: true
-    }
-    // 设置边界
-    this.boundary = {
-      top: 0,
-      bottom: menuButtonInfo.bottom + this.canvas.height * 0.5 + 6,
-      left: 0,
-      right: this.canvas.width
-    };
     // 绘制人物
     this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
-      y: this.groundHeight,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
+      y: this.groundHeightChange,
+      speed: 1 * scaleX, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
       leftJumpFrames: [], // 存储向左弹跳图片的数组
@@ -1015,9 +999,9 @@ export default class Eighth {
       jumping: false,
       jumpStartY: 0,
       jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      jumpHeight: 35 * scaleY, // 跳跃高度
       gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
@@ -1032,7 +1016,7 @@ export default class Eighth {
       this.character.rightFrames.push(frame);
     }
     // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png',  'image/left2.png', 'image/left3.png', 'image/left3.png'];
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png', 'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
@@ -1080,78 +1064,97 @@ export default class Eighth {
       frame.src = path;
       this.character.leftDown.push(frame);
     }
-    // 手提示
-    this.handBallInfo = {
-      x: 24,
-      y: this.groundHeight - 50,
-      width: 16,
-      height: 16,
-      show: false
+    // 绘制冲击波
+    this.cycleInfo = {
+      cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
+      direction: ''
     }
-    // 终点是否显示
+    // 绘制圆球
+    this.circle = {
+      radius: 10 * scaleY,
+      x: this.canvas.width / 2,
+      y: 100,
+      speedX: 2 * scaleX,
+      speedY: 2 * scaleY,
+      show: true
+    }
+    // 设置边界
+    this.boundary = {
+      top: 0,
+      bottom: menuButtonInfo.bottom + this.canvas.height * 0.5,
+      left: 0,
+      right: this.canvas.width
+    };
     this.transportInfo = {
       x: 0,
-      y: this.groundHeight + 10,
-      width: 64,
-      height: 64,
+      y: this.groundHeight + 10 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
       show: false
     }
-    // 平台信息
+    this.handBallInfo = {
+      x: 18 * scaleX,
+      y: this.groundHeight - 50 * scaleY,
+      width: 16 * scaleY,
+      height: 16 * scaleY,
+      show: false
+    }
     this.recInfo = {
-      x: this.canvas.width - 60,
+      x: this.canvas.width - 60 * scaleX,
       y: this.groundHeight / 2,
-      width: 60,
-      height: 10,
+      width: 60 * scaleX,
+      height: 10 * scaleY,
       show: false,
       item: 1,
       recSound: false
     }
-    // 判断机关状态
-    this.gearStatue = 'left';
-    // 是否让机关响起了
-    this.gearSound = false;
+    this.gearInfo = {
+      x: this.canvas.width - 32 * scaleX,
+      y: this.groundHeight,
+      width: 32 * scaleX,
+      height: 32 * scaleY,
+      statue: 'left',
+      sound: false,
+    }
+    this.endDoorStatue = {
+      x: this.canvas.width - 64 * scaleX,
+      y: this.groundHeight / 2 - 64 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      velocityY: 0,
+      gravity: 0.3,
+      show: false
+    }
     // 记录生命总数
     this.lastLifeCount = null;
     // 记录倒计时时间
     this.clockDownTime = 90;
     // 只运行一次
     this.runLimit = 1;
-    this.endDoorStatue = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight / 2 - 64,
-      width: 64,
-      height: 64,
-      velocityY: 0,
-      gravity: 0.3,
-      show: false
-    }
-    // 重置冲击波数据
-    this.cycleAddDistence = 0;
-    this.cycleAddHeight = 0;
-    this.angle = 0; // 冲击波旋转角度
-    this.cycleX = 0; // 记录发出冲击波的初始位置
-    this.direction = ''; // 记录冲击波方向
     this.gameOver = false; // 记录游戏是否结束
     this.gameWin = false;
     this.clearSetInterval = '';
   }
   // 页面销毁机制
   destroy() {
-    // 移除触摸事件监听器
     wx.offTouchStart(this.touchStartHandler.bind(this));
     wx.offTouchEnd(this.touchEndHandler.bind(this));
-    // 清理加载图片
-    this.backButton.image.src = '';
+    this.backButton = ''
     this.gameBackground.src = '';
     this.yardImage.src = '';
+    this.platform.forEach(img => img = null);
     this.cycleImage.src = '';
     this.endDoorImage.src = '';
-    this.lifeCount.src = '';
     this.leftGear.src = '';
     this.rightGear.src = '';
-    this.transport.src = '';
-    this.clockDown.src = '';
     this.handBall.src = '';
+    this.transport.src = '';
+    this.lifeCount.src = '';
+    this.clockDown.src = '';
     this.failTipsImage.src = '';
     // 清理人物图片
     this.destroyCharacterFrames();
