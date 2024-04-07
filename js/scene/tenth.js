@@ -2,18 +2,57 @@ import {
   createBackButton,
   drawIconButton,
 } from '../../utils/button';
-import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
+import { soundManager, backgroundMusic, systemInfo, menuButtonInfo, scaleX, scaleY } from '../../utils/global';
 export default class Tenth {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    // 加载背景音乐
+    /* 加载音乐音效管理器开始 */
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/cinemaback.mp3');
     backgroundMusic.playBackgroundMusic();
-    // 获取音效初始状态
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
+    /* 加载音乐音效管理器结束 */
+    /* 常量设置区域开始 */
+    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
+    this.character = {
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
+      y: this.groundHeightChange,
+      speed: 1 * scaleX, // 人物每次移动的距离
+      leftFrames: [], // 存储向左帧图片的数组
+      rightFrames: [], // 存储向右帧图片的数组
+      leftJumpFrames: [], // 存储向左弹跳图片的数组
+      rightJumpFrames: [], // 存储向右弹跳图片的数组
+      leftShotFrames: [], // 存储向左发射图片的数组
+      rightShotFrames: [], // 存储向右发射图片的数据
+      leftDown: [], // 存储向左死掉的图片数组
+      rightDown: [], // 存储向右死掉的图片数组
+      currentLeftFrameIndex: 0,
+      currentRightFrameIndex: 0,
+      currentLeftShotIndex: 0,
+      currentRightShotIndex: 0,
+      theLastAction: '', // 按钮停下后最后一个动作
+      jumping: false,
+      jumpStartY: 0,
+      jumpStartTime: 0,
+      jumpHeight: 35 * scaleY, // 跳跃高度
+      gravity: 0.3, // 重力
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
+      velocityY: 0, // 纵向速度
+      isOnGround: true, // 初始化在地面
+      isShot: false, // 发射状态
+      shotWave: false, // 发射冲击波状态
+      isFall: false,
+      isOnPlat: false, // 是否在平台上
+      isOnCage: false, // 是否在箱子上
+    };
+    /* 常量设置区域结束 */
+    // 加载背景音乐
+    // 获取音效初始状态
     // 绘制游戏区域背景
     this.gameBackground = new Image();
     this.gameBackground.src = 'image/hotelback.jpg';
@@ -32,40 +71,6 @@ export default class Tenth {
       this.gameOver = true;
       this.game.switchScene(new this.game.startup(this.game));
     });
-    // 绘制人物
-    this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
-      y: this.groundHeightChange,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
-      leftFrames: [], // 存储向左帧图片的数组
-      rightFrames: [], // 存储向右帧图片的数组
-      leftJumpFrames: [], // 存储向左弹跳图片的数组
-      rightJumpFrames: [], // 存储向右弹跳图片的数组
-      leftShotFrames: [], // 存储向左发射图片的数组
-      rightShotFrames: [], // 存储向右发射图片的数据
-      leftDown: [], // 存储向左死掉的图片数组
-      rightDown: [], // 存储向右死掉的图片数组
-      currentLeftFrameIndex: 0,
-      currentRightFrameIndex: 0,
-      currentLeftShotIndex: 0,
-      currentRightShotIndex: 0,
-      theLastAction: '', // 按钮停下后最后一个动作
-      jumping: false,
-      jumpStartY: 0,
-      jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
-      gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
-      velocityY: 0, // 纵向速度
-      isOnGround: true, // 初始化在地面
-      isShot: false, // 发射状态
-      shotWave: false, // 发射冲击波状态
-      isFall: false, // 是否处于掉落状态
-      isOnPlat: false, // 是否在平台上
-      isOnCage: false, // 是否在箱子上
-    };
     // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
@@ -856,12 +861,12 @@ export default class Tenth {
       // 更新人物动态
       this.updateCharacter();
       // 更新倒计时运行
-      if (this.runLimit >= 1){
-        this.runLimit--;
-        this.clearSetInterval = setInterval(function() {
-          self.countdownFunc();
-        }, 1000);
-      }
+      // if (this.runLimit >= 1){
+      //   this.runLimit--;
+      //   this.clearSetInterval = setInterval(function() {
+      //     self.countdownFunc();
+      //   }, 1000);
+      // }
     }
   }
   // 倒计时运行函数
@@ -1075,11 +1080,11 @@ export default class Tenth {
     this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
     // 绘制人物
     this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
       y: this.groundHeightChange,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      speed: 1 * scaleX, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
       leftJumpFrames: [], // 存储向左弹跳图片的数组
@@ -1096,14 +1101,14 @@ export default class Tenth {
       jumping: false,
       jumpStartY: 0,
       jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      jumpHeight: 35 * scaleY, // 跳跃高度
       gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
-      isFall: false, // 是否处于掉落状态
+      isFall: false,
       isOnPlat: false, // 是否在平台上
       isOnCage: false, // 是否在箱子上
     };

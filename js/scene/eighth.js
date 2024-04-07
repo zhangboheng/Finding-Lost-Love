@@ -57,6 +57,7 @@ export default class Eighth {
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
+      isFall: false,
       isCollisionCircle: false
     };
     // 绘制冲击波
@@ -1006,6 +1007,7 @@ export default class Eighth {
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
+      isFall: false,
       isCollisionCircle: false
     };
     // 向右移动时候图片集锦
