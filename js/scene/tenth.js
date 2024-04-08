@@ -785,13 +785,12 @@ export default class Tenth {
     // 当游戏结束时无返回值
     if (this.gameOver || this.gameWin) {
       backgroundMusic.stopBackgroundMusic();
-      if (this.lastLifeCount == 0) {
-        // 绘制失败场景和按钮
+      if(this.lastLifeCount == 0){
         if (this.failTipsImage.complete) {
-          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width) / 2, (this.canvas.height - this.failTipsImage.height) / 2 - this.failTipsImage.height / 2);
+          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width * scaleX) / 2, (this.canvas.height - this.failTipsImage.height * scaleY) / 2 - this.failTipsImage.height * scaleY / 2, this.failTipsImage.width * scaleX, this.failTipsImage.height * scaleY);
         }
-        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40);
-        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110);
+        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40 * scaleY);
+        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110 * scaleY);
       }
     } else {
       let self = this;
@@ -851,9 +850,14 @@ export default class Tenth {
     // 点击返回按钮事件
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
-      clearInterval(this.clearSetInterval);
-      backgroundMusic.stopBackgroundMusic();
-      btn.onClick();
+        clearInterval(this.clearSetInterval);
+        this.gameOver = true;
+        backgroundMusic.stopBackgroundMusic();
+        if (this.lastLifeCount == 0){
+          wx.setStorageSync('lifeCount', 2);
+          wx.setStorageSync('trailNumber', '')
+        }
+        btn.onClick();
       return
     }
     if (this.gameOver) {
@@ -1026,7 +1030,7 @@ export default class Tenth {
   // 重置游戏
   resetGame() {
     backgroundMusic.playBackgroundMusic();
-    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
     // 绘制人物
     this.character = {
       width: 20 * scaleX,
@@ -1167,7 +1171,7 @@ export default class Tenth {
       x: this.canvas.width / 2,
       y: 0,
       ropeWidth: 10 * scaleX,
-      ropeLength: this.groundHeight - this.canvas.height * 0.06 - 50 * scaleY,
+      ropeLength: this.groundHeight - this.canvas.height * 0.06 - 30 * scaleY,
       angle: Math.PI / 4,
       angularVelocity: 0.05,
       gravity: 0.1,
@@ -1178,7 +1182,7 @@ export default class Tenth {
       velocityY: 0,
       gravity: 0.3,
       isStop: false,
-      catch: 1, // 笼子抓捕机会
+      catch: 1,
     }
     this.woodElevatorInfo = {
       x: 0,
