@@ -22,6 +22,7 @@ export default class Prison {
     this.context = game.context;
     /* 加载音乐音效管理器开始 */
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
+    backgroundMusic.setBackgroundMusicSource('audio/running.mp3');
     backgroundMusic.playBackgroundMusic();
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
     /* 加载音乐音效管理器结束 */
@@ -99,7 +100,7 @@ export default class Prison {
       trapInterval: 200,
     }
     this.endDoorStatue = {
-      x: 6000 * scaleX,
+      x: 6100 * scaleX,
       y: this.canvas.height - this.groundHeight - 64 * scaleY,
       width: 64 * scaleX,
       height: 64 * scaleY,
@@ -155,7 +156,7 @@ export default class Prison {
   drawBlackScreen() {
     if (this.isScreenDark) {
       this.context.fillStyle = `rgba(0, 0, 0, ${this.screenDarkness * 0.8})`;
-      this.context.fillRect(0,  0, this.canvas.width, this.canvas.height);
+      this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
   }
   // 更新黑色遮罩
@@ -175,7 +176,7 @@ export default class Prison {
   // 绘制返回按钮
   drawBack() {
     this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
-      this.game.switchScene(new this.game.choose(this.game));
+      this.game.switchScene(new this.game.startup(this.game));
     });
     if (this.backButton.image.complete) {
       this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y);
@@ -436,7 +437,7 @@ export default class Prison {
       }
     });
     // 判断是否与终点碰撞
-    if (this.heroInfo.x <= this.endDoorStatue.x + this.endDoorStatue.width * 2 / 3 - this.endDoorStatue.distence && this.heroInfo.x + this.heroInfo.width >= this.endDoorStatue.x + this.endDoorStatue.width / 3 - this.endDoorStatue.distence && this.heroInfo.y <= this.endDoorStatue.y + this.endDoorStatue.height * 2 / 3 && this.heroInfo.y + this.heroInfo.height >= this.endDoorStatue.y + this.endDoorStatue.height / 3){
+    if (this.heroInfo.x <= this.endDoorStatue.x + this.endDoorStatue.width * 2 / 3 - this.endDoorStatue.distence && this.heroInfo.x + this.heroInfo.width >= this.endDoorStatue.x + this.endDoorStatue.width / 3 - this.endDoorStatue.distence && this.heroInfo.y <= this.endDoorStatue.y + this.endDoorStatue.height * 2 / 3 && this.heroInfo.y + this.heroInfo.height >= this.endDoorStatue.y + this.endDoorStatue.height / 3) {
       clearInterval(this.clearSetInterval);
       this.gameWin = true;
       soundManager.play('win');
@@ -444,13 +445,13 @@ export default class Prison {
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 7)
       this.game.switchScene(new this.game.playground(this.game));
-    }else{
+    } else {
       this.gameWin = false;
     }
   }
   // 绘制终点
   drawEndDoor() {
-    if(this.endDoorImage.complete){
+    if (this.endDoorImage.complete) {
       this.context.drawImage(this.endDoorImage, this.endDoorStatue.x - this.endDoorStatue.distence, this.endDoorStatue.y, this.endDoorStatue.width, this.endDoorStatue.height)
     }
   }
@@ -506,9 +507,9 @@ export default class Prison {
       // 更新黑色遮罩
       this.updateDrawBlackScreen();
       // 更新倒计时运行
-      if (this.runLimit >= 1){
+      if (this.runLimit >= 1) {
         this.runLimit--;
-        this.clearSetInterval = setInterval(function() {
+        this.clearSetInterval = setInterval(function () {
           self.countdownFunc();
         }, 1000);
       }
@@ -550,8 +551,13 @@ export default class Prison {
     const btn = this.backButton;
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
+      clearInterval(this.clearSetInterval);
       this.gameOver = true;
-      backgroundMusic.stopBackgroundMusic()
+      backgroundMusic.stopBackgroundMusic();
+      if (this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
       btn.onClick();
       return
     }
@@ -576,17 +582,17 @@ export default class Prison {
     if (this.gameOver || this.isLevelCompleted) {
       if (touchX >= this.buttonStartInfo.x && touchX <= this.buttonStartInfo.x + this.buttonStartInfo.width &&
         touchY >= this.buttonStartInfo.y && touchY <= this.buttonStartInfo.y + this.buttonStartInfo.height) {
-          backgroundMusic.stopBackgroundMusic();
-          wx.setStorageSync('lifeCount', 2);
-          wx.setStorageSync('trailNumber', '');
-          this.game.switchScene(new this.game.begin(this.game));
+        backgroundMusic.stopBackgroundMusic();
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '');
+        this.game.switchScene(new this.game.begin(this.game));
       }
       if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
         touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {
-          wx.shareAppMessage({
-            title: '一起寻回我们曾经的美好！',
-            imageUrl: 'image/thumbnail.jpg' // 分享图片的路径
-          });
+        wx.shareAppMessage({
+          title: '一起寻回我们曾经的美好！',
+          imageUrl: 'image/thumbnail.jpg' // 分享图片的路径
+        });
       }
     }
   }
@@ -607,7 +613,7 @@ export default class Prison {
       x: 0,
       speed: this.road.speed
     }
-    // 小恐龙属性
+    // 刘逸尘属性
     this.heroInfo = {
       x: 10 * scaleX,
       y: this.canvas.height - this.groundHeight,
@@ -630,7 +636,7 @@ export default class Prison {
       trapInterval: 200,
     }
     this.endDoorStatue = {
-      x: 6000 * scaleX,
+      x: 6100 * scaleX,
       y: this.canvas.height - this.groundHeight - 64 * scaleY,
       width: 64 * scaleX,
       height: 64 * scaleY,
@@ -656,14 +662,12 @@ export default class Prison {
     this.buttonShareInfo = "";
     // 终点显现速度
     this.endSpeed = 0;
-    // 游戏状态
     this.gameOver = false;
-    // 游戏通关状态
     this.isLevelCompleted = false;
   }
   // 页面销毁机制
   destroy() {
-    this.backButton.image.src = '';
+    this.backButton = '';
     this.backgroundImage.src = '';
     this.lifeCount.src = '';
     this.roadImage.src = '';

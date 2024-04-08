@@ -373,7 +373,7 @@ export default class Begin {
     if (this.endDoorStatue.x >= this.moveX + this.canvas.width * 0.3 && this.endDoorStatue.x + this.endDoorStatue.width <= this.moveX + this.canvas.width * 0.6) {
       upOrDown = this.groundHeight;
     } else {
-      upOrDown = this.groundHeight - this.endDoorStatue.height * scaleY / 2;
+      upOrDown = this.groundHeight - this.endDoorStatue.height / 2;
     }
     // 如果平台撤离的位置不足以支撑镜子则镜子下落
     if (this.gearInfo.statue == 'right' && this.rockPlatformList[0].x + this.platform[0].width * scaleX / 2 <= this.endDoorStatue.x && this.endDoorStatue.y <= upOrDown && !this.endDoorStatue.follow) {

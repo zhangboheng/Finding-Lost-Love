@@ -19,7 +19,7 @@ export default class Playground {
       {type: 'text', content: '刘逸尘\n呼～～呼～～\n太累了'},
       {type: 'text', content: '刘逸尘\n太诡异了，脚是自己动起来的'},
       {type: 'text', content: '刘逸尘\n这个地方看着有些眼熟'},
-      {type: 'text', content: "'Bingo!'\n恭喜你又一次通过试炼"},
+      {type: 'text', content: "Bingo!\n恭喜你又一次通过试炼"},
       {type: 'img', content: 'image/playground01.jpg'},
       {type: 'text', content: '刘逸尘\n爱神？快放我出去\n还有，静宁在哪里'},
       {type: 'text', content: '爱神\n先别急，试炼还没结束\n放心，你的爱人很安全'},
@@ -105,6 +105,7 @@ export default class Playground {
     if (this.currentTextIndex == 0) {
       clearInterval(this.timerId);
       setTimeout(() => {
+        backgroundMusic.stopBackgroundMusic();
         this.game.switchScene(new this.game.eighth(this.game));
       }, 2000);
     }

@@ -116,6 +116,7 @@ export default class Phone {
     if (this.currentTextIndex == 0) {
       clearInterval(this.timerId);
       setTimeout(() => {
+        backgroundMusic.stopBackgroundMusic();
         this.game.switchScene(new this.game.seventh(this.game));
       }, 2000);
     }

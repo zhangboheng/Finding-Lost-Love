@@ -112,7 +112,8 @@ export default class Instruction {
       const intro = ['姓名：刘逸尘', '年龄：35 岁', '婚龄：7 年', '儿女：1 个']
       // 计算文本高度和总内容高度
       const textHeight = fontSize * 1.2;
-      const contentHeight = intro.length * textHeight + 20 * scaleY;
+      let compareHeight = intro.length * textHeight >= iconHeight ? intro.length * textHeight : iconHeight
+      const contentHeight = compareHeight + 20 * scaleY;
       // 绘制矩形
       this.context.fillStyle = '#fc86bc';
       this.context.strokeStyle = 'black';
@@ -120,7 +121,7 @@ export default class Instruction {
       this.context.strokeRect(tabX, tabContentY, tabWidth, contentHeight);
       // 绘制角色图片
       if (this.role.complete) {
-        this.context.drawImage(this.role, tabX + 10, tabContentY + iconY + 5 * scaleY, iconWidth, iconHeight);
+        this.context.drawImage(this.role, tabX + 10, tabContentY + iconY, iconWidth, iconHeight);
       }
       // 右侧文本
       this.context.fillStyle = '#000000';
@@ -136,13 +137,8 @@ export default class Instruction {
       const intro = ['名称：时空项链', '功效：关键之匙，开启某些地方']
       // 计算文本高度和总内容高度
       const textHeight = fontSize * 1.2;
-      let limitHeight = '';
-      if (iconHeight * scaleY > intro.length * textHeight) {
-        limitHeight = iconHeight * scaleY;
-      } else {
-        limitHeight = intro.length * textHeight
-      }
-      const contentHeight = limitHeight + 20 * scaleY;
+      let compareHeight = intro.length * textHeight >= iconHeight ? intro.length * textHeight : iconHeight
+      const contentHeight = compareHeight + 20 * scaleY;
       // 绘制矩形
       this.context.fillStyle = '#fc86bc';
       this.context.strokeStyle = 'black';
@@ -150,7 +146,7 @@ export default class Instruction {
       this.context.strokeRect(tabX, tabContentY, tabWidth, contentHeight);
       // 绘制道具图片
       if (this.necklace.complete) {
-        this.context.drawImage(this.necklace, tabX + iconX, tabContentY + 10 * scaleY, iconWidth * scaleY, iconHeight * scaleY);
+        this.context.drawImage(this.necklace, tabX + iconX, tabContentY + 10 * scaleY, iconWidth, iconHeight);
       }
       // 右侧文本
       this.context.fillStyle = '#000000';
@@ -166,7 +162,8 @@ export default class Instruction {
       const intro = ['操作：点击操作杆及按钮', '功能：操作主人公的行为和命运']
       // 计算文本高度和总内容高度
       const textHeight = fontSize * 1.2;
-      const contentHeight = intro.length * textHeight + 20 * scaleY;
+      let compareHeight = intro.length * textHeight >= iconHeight ? intro.length * textHeight : iconHeight
+      const contentHeight = compareHeight + 20 * scaleY;
       // 绘制矩形
       this.context.fillStyle = '#fc86bc';
       this.context.strokeStyle = 'black';
@@ -174,7 +171,7 @@ export default class Instruction {
       this.context.strokeRect(tabX, tabContentY, tabWidth, contentHeight);
       // 绘制道具图片
       if (this.clickIcon.complete) {
-        this.context.drawImage(this.clickIcon, tabX + iconX, tabContentY + 10 * scaleY, iconWidth * scaleY, iconHeight * scaleY);
+        this.context.drawImage(this.clickIcon, tabX + iconX, tabContentY + 10 * scaleY, iconWidth, iconHeight);
       }
       // 右侧文本
       this.context.fillStyle = '#000000';

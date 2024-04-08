@@ -710,12 +710,12 @@ export default class Fith {
     this.drawZombie();
     // 绘制终点
     this.drawEndDoor();
-    // 绘制人物
-    this.drawCharacter();
     // 绘制冲击波
     this.drawCycleWave();
     // 绘制机关
     this.drawGear();
+    // 绘制人物
+    this.drawCharacter();
     // 绘制陷阱针刺
     this.drawTraps();
     // 绘制移动按钮所在区域

@@ -124,6 +124,7 @@ export default class Playground {
     if (this.currentTextIndex == 0) {
       clearInterval(this.timerId);
       setTimeout(() => {
+        backgroundMusic.stopBackgroundMusic();
         this.game.switchScene(new this.game.startup(this.game));
       }, 2000);
     }
