@@ -354,7 +354,7 @@ export default class Ninth {
     if (this.transportSecondInfo.show) {
       const platformSpeed = 0.5 * scaleX; // 平台移动速度
       this.transportSecondInfo.y += platformSpeed * this.transportSecondInfo.direction;
-      if (this.transportSecondInfo.y < menuButtonInfo.bottom + 60 || this.transportSecondInfo.y > this.groundHeight - this.canvas.height * 0.06 + 10) {
+      if (this.transportSecondInfo.y < menuButtonInfo.bottom + 60 || this.transportSecondInfo.y > this.groundHeight - this.canvas.height * 0.06 + 10 * scaleY) {
         this.transportSecondInfo.direction *= -1;
       }
     }
@@ -738,7 +738,7 @@ export default class Ninth {
     }
   }
   // 倒计时运行函数
-  countdownFunc(_name) {
+  countdownFunc() {
     if (this.clockDownTime > 0) {
       this.clockDownTime--;
     } else {

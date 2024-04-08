@@ -2,44 +2,33 @@ import {
   createBackButton,
   drawIconButton,
 } from '../../utils/button';
-import { soundManager, backgroundMusic, systemInfo, menuButtonInfo } from '../../utils/global';
-export default class Ninth {
+import {
+  soundManager,
+  backgroundMusic,
+  menuButtonInfo,
+  scaleX,
+  scaleY
+} from '../../utils/global';
+export default class Ending {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
-    // 加载背景音乐
+    /* 加载音乐音效管理器开始 */
     backgroundMusic.setBackgroundMusicState(wx.getStorageSync('backgroundMusicEnabled'));
     backgroundMusic.setBackgroundMusicSource('audio/cinemaback.mp3');
     backgroundMusic.playBackgroundMusic();
-    // 获取音效初始状态
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
-    // 绘制游戏区域背景
-    this.gameBackground = new Image();
-    this.gameBackground.src = 'image/amusementleft.jpg';
-    this.gameBackgroundRight = new Image();
-    this.gameBackgroundRight.src = 'image/amusementright.jpg';
-    // 绘制陆地
-    this.yardImage = new Image();
-    this.yardImage.src = 'image/restaurantyard.jpg';
-    // 陆地高度
-    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 + 6 - 35;
-    // 创建返回按钮
-    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
-      if (this.lastLifeCount == 0) {
-        wx.setStorageSync('lifeCount', 2);
-        wx.setStorageSync('trailNumber', '')
-      }
-      this.gameOver = true;
-      this.game.switchScene(new this.game.startup(this.game));
-    });
-    // 绘制人物
+    /* 加载音乐音效管理器结束 */
+    /* 常量设置区域开始 */
+    this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
     this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
       y: this.groundHeight,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      speed: 1 * scaleX, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
       leftJumpFrames: [], // 存储向左弹跳图片的数组
@@ -56,224 +45,120 @@ export default class Ninth {
       jumping: false,
       jumpStartY: 0,
       jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      jumpHeight: 35 * scaleY, // 跳跃高度
       gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isFall: false, // 是否处于掉落状态
+      moveX: 0,
     };
-    // 向右移动时候图片集锦
-    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
-    for (const path of framePathsRight) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.rightFrames.push(frame);
+    this.cycleInfo = {
+      cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
+      direction: ''
     }
-    // 向左移动时候图片集锦
-    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png', 'image/left2.png', 'image/left3.png', 'image/left3.png'];
-    for (const path of framePathsLeft) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.leftFrames.push(frame);
-    }
-    // 向右移动跳动的图片集锦
-    const framePathsRightJump = ['image/rightjump1.png', 'image/rightjump2.png'];
-    for (const path of framePathsRightJump) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.rightJumpFrames.push(frame);
-    }
-    // 向左移动弹跳的图片集锦
-    const framePathsLeftJump = ['image/leftjump1.png', 'image/leftjump2.png'];
-    for (const path of framePathsLeftJump) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.leftJumpFrames.push(frame);
-    }
-    // 向右发射的图片集锦
-    const framePathsRightShot = ['image/shot1.png', 'image/shot2.png'];
-    for (const path of framePathsRightShot) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.rightShotFrames.push(frame);
-    }
-    // 向左发射的图片集锦
-    const framePathsLeftShot = ['image/shot3.png', 'image/shot4.png'];
-    for (const path of framePathsLeftShot) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.leftShotFrames.push(frame);
-    }
-    // 向右死掉的图片集锦
-    const framePathsRightDead = ['image/rightdown.png'];
-    for (const path of framePathsRightDead) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.rightDown.push(frame);
-    }
-    // 向左死掉的图片集锦
-    const framePathsLeftDead = ['image/leftdown.png'];
-    for (const path of framePathsLeftDead) {
-      const frame = new Image();
-      frame.src = path;
-      this.character.leftDown.push(frame);
-    }
-    this.moveX = 0;
-    // 绘制发出的冲击波图片
-    this.cycleImage = new Image();
-    this.cycleImage.src = 'image/cycle.png';
-    this.cycleSpeed = systemInfo.screenWidth * 0.005;
-    this.cycleAddDistence = 0;
-    this.cycleAddHeight = 0;
-    this.angle = 0; // 冲击波旋转角度
-    this.circleAngle = 0; // 冲击波提示
-    this.cycleX = 0; // 记录发出冲击波的初始位置
-    this.direction = ''; //记录冲击波的方向
-    // 绘制终点的图片
-    this.endDoorImage = new Image();
-    this.endDoorImage.src = 'image/doorover.png';
     this.endDoorStatue = {
       x: 0,
       y: 0,
-      width: 64,
-      height: 64,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
       endDoorShow: false,
       velocityY: 0,
       gravity: 0.3,
     }
-    // 绘制时间魔法阵
-    this.transport = new Image();
-    this.transport.src = 'image/transport.png';
     this.transportInfo = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight + 10,
-      width: 64,
-      height: 64,
+      x: this.canvas.width - 64 * scaleY,
+      y: this.groundHeight + 10 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
       show: true
     }
-    // 第二个魔法阵信息
     this.transportSecondInfo = {
-      x: -20,
-      y: menuButtonInfo.bottom + 60,
-      width: 64,
-      height: 64,
+      x: -20 * scaleX,
+      y: menuButtonInfo.bottom + 60 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
       show: false,
       direction: 1
     }
-    // 绘制循环提示
     this.cycleWaveInfo = {
-      x: this.canvas.width - 32,
-      y: this.groundHeight - 50,
-      width: 16,
-      height: 16,
-      show: false
+      x: this.canvas.width - 32 * scaleY,
+      y: this.groundHeight - 50 * scaleY,
+      width: 16 * scaleY,
+      height: 16 * scaleY,
+      show: false,
+      circleAngle: 0
     }
-    // 绘制机关左的图片
-    this.leftGear = new Image();
-    this.leftGear.src = 'image/joystickleft.png';
-    // 绘制机关右的图片
-    this.rightGear = new Image();
-    this.rightGear.src = 'image/joystickright.png';
-    // 判断机关状态
-    this.gearStatue = 'left';
-    // 是否让机关响起了
-    this.gearSound = false;
-    this.iceGear = new Image();
-    this.iceGear.src = 'image/icegear.png';
-    // 第二个机关信息
+    this.gearInfo = {
+      x: (this.canvas.width - 32 * scaleX) * 2,
+      y: this.groundHeight,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
+      statue: 'left',
+      sound: false
+    }
     this.gearSecondInfo = {
-      x: -32,
-      y: this.groundHeight - this.canvas.height * 0.06 - 110,
-      width: 32,
-      height: 32,
+      x: -32 * scaleX,
+      y: this.groundHeight - this.canvas.height * 0.06 - 105 * scaleY,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
       velocityY: 0,
       direction: 1,
       gearStatue: 'left',
       gearSound: false,
-      melt: false, // 是否化了
+      melt: false,
     }
-    // 绘制飞机的基座
-    this.baseImage = new Image();
-    this.baseImage.src = 'image/base.png';
-    // 绘制飞机的主体
-    this.airplane = new Image();
-    this.airplane.src = 'image/rocket.png';
+    this.fireInfo = {
+      x: this.canvas.width / 2 + 40 * scaleX,
+      y: this.groundHeight - 75 * scaleY,
+      width: 125 * scaleY,
+      height: 125 * scaleY,
+      framePath: [],
+      show: true,
+      currentIndex: 0
+    }
     this.airplaneInfo = {
-      x: this.canvas.width * 3 / 2 - 100,
-      y: this.groundHeight - 24,
-      width: 54,
-      height: 34,
+      x: this.canvas.width * 3 / 2 - 100 * scaleX,
+      y: this.groundHeight - 24 * scaleY,
+      width: 54 * scaleX,
+      height: 34 * scaleY,
       airplaneRotation: 0,
       velocityY: 0,
       launch: false,
       launchOff: 1,
       show: true
     }
-    // 绘制火焰
-    this.fireInfo = {
-      x: this.canvas.width / 2 + 40,
-      y: this.groundHeight - 72,
-      width: 125,
-      height: 125,
-      framePath: [],
-      show: true,
-      currentIndex: 0
-    }
-    const framePathsFire = ['image/fire01.png', 'image/fire01.png', 'image/fire01.png', 'image/fire01.png', 'image/fire02.png', 'image/fire02.png', 'image/fire02.png', 'image/fire02.png', 'image/fire03.png', 'image/fire03.png', 'image/fire03.png', 'image/fire03.png', 'image/fire04.png', 'image/fire04.png', 'image/fire04.png', 'image/fire04.png', 'image/fire05.png', 'image/fire05.png', 'image/fire05.png', 'image/fire05.png', 'image/fire06.png', 'image/fire06.png', 'image/fire06.png', 'image/fire06.png', 'image/fire07.png', 'image/fire07.png', 'image/fire07.png', 'image/fire07.png'];
-    for (const path of framePathsFire) {
-      const frame = new Image();
-      frame.src = path;
-      this.fireInfo.framePath.push(frame);
-    }
-    // 绳子信息
     this.ropeInfo = {
       startX: 0,
-      startY: this.groundHeight - this.canvas.height * 0.06 - 50,
+      startY: this.groundHeight - this.canvas.height * 0.06 - 50 * scaleY,
       endX: this.canvas.width,
-      endY: this.groundHeight - this.canvas.height * 0.06 - 50,
+      endY: this.groundHeight - this.canvas.height * 0.06 - 50 * scaleY,
       controlX: this.canvas.width / 2,
-      controlY: this.groundHeight - this.canvas.height * 0.06 - 30,
+      controlY: this.groundHeight - this.canvas.height * 0.06 - 30 * scaleY,
       color: '#333',
       width: 5,
       break: false,
     }
-    // 绘制独轮车图片
-    this.unicycleImage = new Image();
-    this.unicycleImage.src = 'image/unicycle.png';
     this.unicycleInfo = {
-      x: -32,
-      y: this.groundHeight - this.canvas.height * 0.06 - 78,
-      width: 32,
-      height: 32,
+      x: -32 * scaleX,
+      y: this.groundHeight - this.canvas.height * 0.06 - 73 * scaleY,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
       velocityY: 0,
       direction: 1 // 1 为向右，-1 为向左
     }
-    // 绘制生命数显示
-    this.lifeCount = new Image();
-    this.lifeCount.src = 'image/head.png';
-    // 记录生命总数
-    this.lastLifeCount = null;
-    // 绘制倒计时图片显示
-    this.clockDown = new Image();
-    this.clockDown.src = 'image/clock.png';
-    // 记录倒计时时间
-    this.clockDownTime = 90;
-    // 只运行一次
-    this.runLimit = 1;
-    // 雪粒子集合
-    this.particles = [];
-    // 是否显示雪粒子
-    this.particlesShow = false;
-    // boss设置
     this.bossInfo = {
       x: this.canvas.width * 2,
-      y: menuButtonInfo.bottom + 60,
-      initialY: menuButtonInfo.bottom + 60,
-      width: 128,
-      height: 128,
+      y: menuButtonInfo.bottom + 60 * scaleY,
+      initialY: menuButtonInfo.bottom + 60 * scaleY,
+      width: 128 * scaleY,
+      height: 128 * scaleY,
       wingFrame: [],
       bodyFrame: [],
       shotFrame: [],
@@ -288,6 +173,111 @@ export default class Ninth {
       currentHealth: 100, // 当前血量
       isDead: false, // 是否已死亡
     }
+    this.lightShotInfo = {
+      x: this.canvas.width * 2,
+      y: this.groundHeight,
+      width: 128 * scaleY,
+      height: 128 * scaleY,
+      angle: 0,
+      show: false,
+    }
+    this.lastLifeCount = null;
+    this.clockDownTime = 90;
+    this.runLimit = 1;
+    this.particles = [];
+    this.particlesShow = false;
+    this.pressingDirection = null;
+    this.gameOver = false;
+    this.gameWin = false;
+    this.buttonStartInfo = "";
+    this.buttonShareInfo = "";
+    this.context.font = `${20 * scaleX}px Arial`;
+    this.clearSetInterval = '';
+    /* 常量设置区域结束 */
+    /* 图片加载区域开始 */
+    this.gameBackground = new Image();
+    this.gameBackground.src = 'image/amusementleft.jpg';
+    this.backButton = '';
+    this.gameBackgroundRight = new Image();
+    this.gameBackgroundRight.src = 'image/amusementright.jpg';
+    this.yardImage = new Image();
+    this.yardImage.src = 'image/restaurantyard.jpg';
+    const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
+    for (const path of framePathsRight) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightFrames.push(frame);
+    }
+    const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png', 'image/left2.png', 'image/left3.png', 'image/left3.png'];
+    for (const path of framePathsLeft) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftFrames.push(frame);
+    }
+    const framePathsRightJump = ['image/rightjump1.png', 'image/rightjump2.png'];
+    for (const path of framePathsRightJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightJumpFrames.push(frame);
+    }
+    const framePathsLeftJump = ['image/leftjump1.png', 'image/leftjump2.png'];
+    for (const path of framePathsLeftJump) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftJumpFrames.push(frame);
+    }
+    const framePathsRightShot = ['image/shot1.png', 'image/shot2.png'];
+    for (const path of framePathsRightShot) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightShotFrames.push(frame);
+    }
+    const framePathsLeftShot = ['image/shot3.png', 'image/shot4.png'];
+    for (const path of framePathsLeftShot) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftShotFrames.push(frame);
+    }
+    const framePathsRightDead = ['image/rightdown.png'];
+    for (const path of framePathsRightDead) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.rightDown.push(frame);
+    }
+    const framePathsLeftDead = ['image/leftdown.png'];
+    for (const path of framePathsLeftDead) {
+      const frame = new Image();
+      frame.src = path;
+      this.character.leftDown.push(frame);
+    }
+    this.cycleImage = new Image();
+    this.cycleImage.src = 'image/cycle.png';
+    this.endDoorImage = new Image();
+    this.endDoorImage.src = 'image/doorover.png';
+    this.transport = new Image();
+    this.transport.src = 'image/transport.png';
+    this.leftGear = new Image();
+    this.leftGear.src = 'image/joystickleft.png';
+    this.rightGear = new Image();
+    this.rightGear.src = 'image/joystickright.png';
+    this.iceGear = new Image();
+    this.iceGear.src = 'image/icegear.png';
+    this.baseImage = new Image();
+    this.baseImage.src = 'image/base.png';
+    this.airplane = new Image();
+    this.airplane.src = 'image/rocket.png';
+    const framePathsFire = ['image/fire01.png', 'image/fire01.png', 'image/fire01.png', 'image/fire01.png', 'image/fire02.png', 'image/fire02.png', 'image/fire02.png', 'image/fire02.png', 'image/fire03.png', 'image/fire03.png', 'image/fire03.png', 'image/fire03.png', 'image/fire04.png', 'image/fire04.png', 'image/fire04.png', 'image/fire04.png', 'image/fire05.png', 'image/fire05.png', 'image/fire05.png', 'image/fire05.png', 'image/fire06.png', 'image/fire06.png', 'image/fire06.png', 'image/fire06.png', 'image/fire07.png', 'image/fire07.png', 'image/fire07.png', 'image/fire07.png'];
+    for (const path of framePathsFire) {
+      const frame = new Image();
+      frame.src = path;
+      this.fireInfo.framePath.push(frame);
+    }
+    this.unicycleImage = new Image();
+    this.unicycleImage.src = 'image/unicycle.png';
+    this.lifeCount = new Image();
+    this.lifeCount.src = 'image/head.png';
+    this.clockDown = new Image();
+    this.clockDown.src = 'image/clock.png';
     // 翅膀图片集锦
     const framePathsWing = ['image/wing01.png', 'image/wing01.png', 'image/wing01.png', 'image/wing01.png', 'image/wing01.png', 'image/wing02.png', 'image/wing02.png', 'image/wing02.png', 'image/wing02.png', 'image/wing02.png', 'image/wing03.png', 'image/wing03.png', 'image/wing03.png', 'image/wing03.png', 'image/wing03.png', 'image/wing04.png', 'image/wing04.png', 'image/wing04.png', 'image/wing04.png', 'image/wing04.png', 'image/wing05.png', 'image/wing05.png', 'image/wing05.png', 'image/wing05.png', 'image/wing05.png', 'image/wing06.png', 'image/wing06.png', 'image/wing06.png', 'image/wing06.png', 'image/wing06.png'];
     for (const path of framePathsWing) {
@@ -311,29 +301,13 @@ export default class Ninth {
     }
     this.lightShot = new Image();
     this.lightShot.src = 'image/tornado.png';
-    this.lightShotInfo = {
-      x: this.canvas.width * 2,
-      y: this.groundHeight,
-      width: 128,
-      height: 128,
-      angle: 0,
-      show: false,
-    }
-    // 添加触摸事件监听
-    wx.onTouchStart(this.touchStartHandler.bind(this));
-    wx.onTouchEnd(this.touchEndHandler.bind(this));
-    this.pressingDirection = null; // 记录当前长按的方向键
-    this.gameOver = false; // 记录游戏是否结束
-    this.gameWin = false; //记录游戏是否胜利
-    // 重新开始按钮
-    this.buttonStartInfo = "";
-    // 分享好友按钮
-    this.buttonShareInfo = "";
-    // 加载失败图片
     this.failTipsImage = new Image();
     this.failTipsImage.src = 'image/gameovertips.png';
-    this.context.font = '20px Arial';
-    this.clearSetInterval = '';
+    /* 图片加载区域结束 */
+    /* 事件处理监听绑定开始 */
+    wx.onTouchStart(this.touchStartHandler.bind(this));
+    wx.onTouchEnd(this.touchEndHandler.bind(this));
+    /* 事件处理监听绑定结束 */
   }
   // 绘制背景
   drawBackground() {
@@ -342,6 +316,9 @@ export default class Ninth {
   }
   // 绘制返回按钮
   drawBack() {
+    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+      this.game.switchScene(new this.game.startup(this.game));
+    });
     if (this.backButton.image.complete) {
       this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y);
     }
@@ -351,7 +328,7 @@ export default class Ninth {
     const number = '12';
     const textWidth = this.context.measureText(number).width;
     const startX = this.canvas.width - textWidth - 10;
-    const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
+    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
     this.context.save();
     this.context.fillStyle = '#ffffff99';
     this.context.textAlign = 'left'; // 文本左对齐
@@ -361,8 +338,8 @@ export default class Ninth {
   }
   // 绘制倒计时
   startCountdown() {
-    const iconSize = 24; // 图标大小
-    const iconPadding = 10; // 图标与分数之间的间距
+    const iconSize = 24 * scaleY; // 图标大小
+    const iconPadding = 10 * scaleX; // 图标与分数之间的间距
     // 计算分数文本的宽度
     const textWidth = this.context.measureText(this.clockDownTime.toString().padStart(2, '0')).width;
     // 计算总宽度（图标宽度 + 间距 + 文本宽度）
@@ -371,8 +348,8 @@ export default class Ninth {
     const startX = (this.canvas.width - totalWidth) / 2;
     const iconX = startX;
     const clockDownX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.top + 6; // 图标的y坐标
-    const clockDownY = menuButtonInfo.top + 20; // 分数的y坐标
+    const iconY = menuButtonInfo.top + 6 * scaleY; // 图标的y坐标
+    const clockDownY = menuButtonInfo.top + 20 * scaleY; // 分数的y坐标
     // 绘制图标
     if (this.clockDown.complete) {
       this.context.drawImage(this.clockDown, iconX, iconY, iconSize, iconSize);
@@ -388,14 +365,14 @@ export default class Ninth {
   drawLifeCount() {
     // 记录生命总数
     this.lastLifeCount = wx.getStorageSync('lifeCount');
-    const iconSize = 32; // 图标大小
-    const iconPadding = 10; // 图标与分数之间的间距
+    const iconSize = 32 * scaleY; // 图标大小
+    const iconPadding = 10 * scaleX; // 图标与分数之间的间距
     // 计算分数文本的宽度
     const startX = 10;
     const iconX = startX;
     const scoreX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.bottom + 2; // 图标的y坐标
-    const scoreY = menuButtonInfo.bottom + 20; // 分数的y坐标
+    const iconY = menuButtonInfo.bottom + 2 * scaleY; // 图标的y坐标
+    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
     // 绘制图标
     if (this.lifeCount.complete) {
       this.context.drawImage(this.lifeCount, iconX, iconY, iconSize, iconSize);
@@ -408,56 +385,42 @@ export default class Ninth {
     this.context.fillText(`X${this.lastLifeCount}`, scoreX, scoreY);
     this.context.restore();
   }
-  // 绘制游戏活动区域
-  drawActionZone() {
-    // 保存当前context状态
-    this.context.save();
-    // 绘制黑色矩形
-    const rectHeight = this.canvas.height * 0.6;
-    this.context.fillStyle = '#000000'; // 黑色
-    this.context.fillRect(0, 0, this.canvas.width, rectHeight);
-    this.context.restore();
-  }
   // 绘制游戏背景
   drawGameBackground() {
     if (this.gameBackground.complete) {
-      this.context.drawImage(this.gameBackground, this.moveX, 0, this.canvas.width, this.canvas.height * 0.6)
+      this.context.drawImage(this.gameBackground, this.character.moveX, 0, this.canvas.width, this.canvas.height * 0.6)
     }
     if (this.gameBackgroundRight.complete) {
-      this.context.drawImage(this.gameBackgroundRight, this.canvas.width + this.moveX, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
+      this.context.drawImage(this.gameBackgroundRight, this.canvas.width + this.character.moveX, 0, this.canvas.width, this.canvas.height * 0.6)
     }
   }
   // 更新游戏背景
   updateGameBackground() {
-    this.moveX = -this.character.x + 35;
-    if (this.moveX >= 0) {
-      this.moveX = 0;
+    this.character.moveX = -this.character.x + 35 * scaleX;
+    if (this.character.moveX >= 0) {
+      this.character.moveX = 0;
     }
   }
   // 绘制陆地
   drawYard() {
     if (this.yardImage.complete) {
-      this.context.drawImage(this.yardImage, this.moveX, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width, this.canvas.height * 0.1)
-      this.context.drawImage(this.yardImage, this.canvas.width + this.moveX, menuButtonInfo.bottom + this.canvas.height * 0.5 + 6, this.canvas.width, this.canvas.height * 0.1)
+      this.context.drawImage(this.yardImage, this.character.moveX, menuButtonInfo.bottom + this.canvas.height * 0.5, this.canvas.width, this.canvas.height * 0.1)
+      this.context.drawImage(this.yardImage, this.canvas.width + this.character.moveX, menuButtonInfo.bottom + this.canvas.height * 0.5, this.canvas.width, this.canvas.height * 0.1)
     }
   }
   // 绘制魔法阵
   drawTransport() {
     if (this.gearSecondInfo.gearStatue == 'right') {
-      if (this.transportInfo.show) {
-        if (this.transport.complete) {
-          this.context.drawImage(this.transport, this.transportInfo.x + this.moveX, this.transportInfo.y - this.transportInfo.height / 2, this.transportInfo.width, this.transportInfo.height);
-        }
+      if (this.transport.complete && this.transportInfo.show) {
+        this.context.drawImage(this.transport, this.transportInfo.x + this.character.moveX, this.transportInfo.y - this.transportInfo.height / 2, this.transportInfo.width, this.transportInfo.height);
       }
-      if (this.transportSecondInfo.show) {
-        if (this.transport.complete) {
-          this.context.save();
-          this.context.translate(this.transportSecondInfo.x + this.transportSecondInfo.width / 2, this.transportSecondInfo.y + this.transportSecondInfo.height / 2);
-          this.context.rotate(Math.PI / 2);
-          this.context.translate(-(this.transportSecondInfo.x + this.transportSecondInfo.width / 2), -(this.transportSecondInfo.y + this.transportSecondInfo.height / 2));
-          this.context.drawImage(this.transport, this.transportSecondInfo.x, this.transportSecondInfo.y - this.transportSecondInfo.height / 2, this.transportSecondInfo.width, this.transportSecondInfo.height);
-          this.context.restore();
-        }
+      if (this.transport.complete && this.transportSecondInfo.show) {
+        this.context.save();
+        this.context.translate(this.transportSecondInfo.x + this.transportSecondInfo.width / 2 + this.character.moveX, this.transportSecondInfo.y + this.transportSecondInfo.height / 2);
+        this.context.rotate(Math.PI / 2);
+        this.context.translate(-(this.transportSecondInfo.x + this.transportSecondInfo.width / 2) + this.character.moveX, -(this.transportSecondInfo.y + this.transportSecondInfo.height / 2));
+        this.context.drawImage(this.transport, this.transportSecondInfo.x, this.transportSecondInfo.y - this.transportSecondInfo.height / 2, this.transportSecondInfo.width, this.transportSecondInfo.height);
+        this.context.restore();
       }
     }
   }
@@ -465,8 +428,8 @@ export default class Ninth {
   updateTransport() {
     if (this.transportSecondInfo.show) {
       const platformSpeed = 0.5; // 平台移动速度
-      this.transportSecondInfo.y += platformSpeed * this.transportSecondInfo.direction;
-      if (this.transportSecondInfo.y < menuButtonInfo.bottom + 60 || this.transportSecondInfo.y > this.groundHeight - this.canvas.height * 0.06 + 10) {
+      this.transportSecondInfo.y += platformSpeed * scaleX * this.transportSecondInfo.direction;
+      if (this.transportSecondInfo.y < menuButtonInfo.bottom + 60 * scaleY || this.transportSecondInfo.y > this.groundHeight - this.canvas.height * 0.06 + 10 * scaleY) {
         this.transportSecondInfo.direction *= -1;
       }
     }
@@ -477,12 +440,12 @@ export default class Ninth {
       if (this.cycleImage.complete) {
         this.context.save();
         this.context.globalAlpha = 0.5;
-        this.context.translate(this.cycleWaveInfo.x + this.moveX, this.cycleWaveInfo.y);
-        this.context.rotate(this.circleAngle);
+        this.context.translate(this.cycleWaveInfo.x + this.character.moveX, this.cycleWaveInfo.y);
+        this.context.rotate(this.cycleWaveInfo.circleAngle);
         this.context.drawImage(this.cycleImage, -this.cycleWaveInfo.width / 2, -this.cycleWaveInfo.height / 2, this.cycleWaveInfo.width, this.cycleWaveInfo.height);
         this.context.restore();
         // 增加角度以实现旋转
-        this.circleAngle += 0.02;
+        this.cycleWaveInfo.circleAngle += 0.02;
       }
     }
   }
@@ -515,25 +478,25 @@ export default class Ninth {
   // 绘制独轮车
   drawUnicycle() {
     if (this.unicycleImage.complete) {
-      this.context.drawImage(this.unicycleImage, this.unicycleInfo.x + this.moveX, this.unicycleInfo.y, this.unicycleInfo.width, this.unicycleInfo.height);
+      this.context.drawImage(this.unicycleImage, this.unicycleInfo.x + this.character.moveX, this.unicycleInfo.y, this.unicycleInfo.width, this.unicycleInfo.height);
     }
   }
   // 更新独轮车
   updateUnicycle() {
     if (!this.ropeInfo.break) {
-      if (this.unicycleInfo.direction == 1 && this.unicycleInfo.x <= this.canvas.width * 2 + 32) {
+      if (this.unicycleInfo.direction == 1 && this.unicycleInfo.x <= this.canvas.width * 2 + 32 * scaleX) {
         this.unicycleInfo.x += this.character.speed;
       } else if (this.unicycleInfo.direction == 1) {
         this.unicycleInfo.direction = -1;
       }
-      if (this.unicycleInfo.direction == -1 && this.unicycleInfo.x >= -32) {
+      if (this.unicycleInfo.direction == -1 && this.unicycleInfo.x >= -32 * scaleX) {
         this.unicycleInfo.x -= this.character.speed;
       } else if (this.unicycleInfo.direction == -1) {
         this.unicycleInfo.direction = 1;
       }
     } else {
-      if (this.unicycleInfo.y >= this.groundHeight + 35) {
-        this.unicycleInfo.y = this.groundHeight + 35;
+      if (this.unicycleInfo.y >= this.groundHeight + 35 * scaleY) {
+        this.unicycleInfo.y = this.groundHeight + 35 * scaleY;
       } else {
         this.unicycleInfo.velocityY += 0.3;
         this.unicycleInfo.y += this.unicycleInfo.velocityY;
@@ -542,7 +505,7 @@ export default class Ninth {
   }
   // 绘制火焰
   drawFire() {
-    this.context.drawImage(this.fireInfo.framePath[this.fireInfo.currentIndex], this.fireInfo.x + this.moveX, this.fireInfo.y, this.fireInfo.width, this.fireInfo.height)
+    this.context.drawImage(this.fireInfo.framePath[this.fireInfo.currentIndex], this.fireInfo.x + this.character.moveX, this.fireInfo.y, this.fireInfo.width, this.fireInfo.height)
   }
   // 更新火焰
   updateFire() {
@@ -560,7 +523,7 @@ export default class Ninth {
   // 绘制降雪
   createParticle() {
     if (this.particlesShow) {
-      const fountainWidth = this.canvas.width * 2 + 20; // 降雪的宽度
+      const fountainWidth = this.canvas.width * 2 + 20 * scaleX; // 降雪的宽度
       const numParticles = 3; // 每帧生成的粒子数量
       const gradient = this.context.createLinearGradient(this.canvas.width / 2, this.groundHeight, this.canvas.width / 2, 0);
       gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)'); // 底部颜色，白色
@@ -581,21 +544,21 @@ export default class Ninth {
   // 更新降雪
   updateParticles() {
     if (this.particlesShow) {
-      const thresholdY = this.groundHeight + 30; // 阈值，超过该值粒子消失
+      const thresholdY = this.groundHeight + 30 * scaleY; // 阈值，超过该值粒子消失
       for (let i = 0; i < this.particles.length; i++) {
         const particle = this.particles[i];
         // 更新粒子位置
         particle.x += particle.speedX;
-        if (particle.y <= this.groundHeight + 29) {
+        if (particle.y <= this.groundHeight + 29 * scaleY) {
           particle.y -= particle.speedY;
         }
         // 绘制粒子
         this.context.fillStyle = particle.gradient;
         this.context.beginPath(); // 开始路径绘制
-        this.context.arc(particle.x + this.moveX, particle.y, particle.size / 2, 0, Math.PI * 2); // 绘制圆形
+        this.context.arc(particle.x + this.character.moveX, particle.y, particle.size / 2, 0, Math.PI * 2); // 绘制圆形
         this.context.fill(); // 填充颜色
         // 移除已超出画布的粒子
-        if (particle.y >= thresholdY || particle.x <= 0 || particle.x > this.canvas.width * 2 + 20) {
+        if (particle.y >= thresholdY || particle.x <= 0 || particle.x > this.canvas.width * 2 + 20 * scaleX) {
           this.particles.splice(i, 6);
           i--;
         }
@@ -604,20 +567,20 @@ export default class Ninth {
   }
   // 绘制机关
   drawGear() {
-    if (this.gearStatue == 'left') {
+    if (this.gearInfo.statue == 'left') {
       if (this.leftGear.complete) {
         this.context.save();
-        this.context.translate((this.canvas.width - this.leftGear.width) * 2 + this.moveX, this.groundHeight);
+        this.context.translate(this.gearInfo.x + this.character.moveX, this.gearInfo.y);
         this.context.rotate(-Math.PI / 2);
-        this.context.drawImage(this.leftGear, -this.leftGear.width / 2, -this.leftGear.height / 2, this.leftGear.width, this.leftGear.height);
+        this.context.drawImage(this.leftGear, -this.gearInfo.width / 2, -this.gearInfo.height / 2, this.gearInfo.width, this.gearInfo.height);
         this.context.restore();
       }
     } else {
       if (this.rightGear.complete) {
         this.context.save();
-        this.context.translate((this.canvas.width - this.rightGear.width) * 2 + this.moveX, this.groundHeight);
+        this.context.translate(this.gearInfo.x + this.character.moveX, this.gearInfo.y);
         this.context.rotate(-Math.PI / 2);
-        this.context.drawImage(this.rightGear, -this.rightGear.width / 2, -this.rightGear.height / 2, this.rightGear.width, this.rightGear.height);
+        this.context.drawImage(this.rightGear, -this.gearInfo.width / 2, -this.gearInfo.height / 2, this.gearInfo.width, this.gearInfo.height);
         this.context.restore();
       }
     }
@@ -626,41 +589,41 @@ export default class Ninth {
   drawSecondGear() {
     if (this.gearSecondInfo.gearStatue == 'left') {
       if (this.leftGear.complete) {
-        this.context.drawImage(this.leftGear, this.gearSecondInfo.x + this.moveX, this.gearSecondInfo.y, this.leftGear.width, this.leftGear.height);
+        this.context.drawImage(this.leftGear, this.gearSecondInfo.x + this.character.moveX, this.gearSecondInfo.y, this.gearSecondInfo.width,  32 * scaleY);
       }
     } else {
       if (this.rightGear.complete) {
-        this.context.drawImage(this.rightGear, this.gearSecondInfo.x + this.moveX, this.gearSecondInfo.y, this.rightGear.width, this.rightGear.height);
+        this.context.drawImage(this.rightGear, this.gearSecondInfo.x + this.character.moveX, this.gearSecondInfo.y, this.gearSecondInfo.width, 32 * scaleY);
       }
     }
     if (this.iceGear.complete) {
-      this.context.drawImage(this.iceGear, this.gearSecondInfo.x + this.moveX, this.gearSecondInfo.y, this.gearSecondInfo.width, this.gearSecondInfo.height);
+      this.context.drawImage(this.iceGear, this.gearSecondInfo.x + this.character.moveX, this.gearSecondInfo.y, this.gearSecondInfo.width, this.gearSecondInfo.height);
     }
   }
   // 更新第二个机关
   updateSecondGear() {
     if (!this.ropeInfo.break) {
-      if (this.gearSecondInfo.direction == 1 && this.gearSecondInfo.x <= this.canvas.width * 2 + 32) {
+      if (this.gearSecondInfo.direction == 1 && this.gearSecondInfo.x <= this.canvas.width * 2 + 32 * scaleX) {
         this.gearSecondInfo.x += this.character.speed;
       } else if (this.gearSecondInfo.direction == 1) {
         this.gearSecondInfo.direction = -1;
       }
-      if (this.gearSecondInfo.direction == -1 && this.gearSecondInfo.x >= -32) {
+      if (this.gearSecondInfo.direction == -1 && this.gearSecondInfo.x >= -32 * scaleX) {
         this.gearSecondInfo.x -= this.character.speed;
       } else if (this.gearSecondInfo.direction == -1) {
         this.gearSecondInfo.direction = 1;
       }
     } else {
-      if (this.gearSecondInfo.y >= this.groundHeight + 3) {
-        this.gearSecondInfo.y = this.groundHeight + 3;
+      if (this.gearSecondInfo.y >= this.groundHeight + 3 * scaleY) {
+        this.gearSecondInfo.y = this.groundHeight + 3 * scaleY;
       } else {
         this.gearSecondInfo.velocityY += 0.3;
         this.gearSecondInfo.y += this.gearSecondInfo.velocityY;
       }
     }
     // 第二个机关和火焰碰撞则消失
-    if (this.gearSecondInfo.x <= this.fireInfo.x + this.fireInfo.width - 20 && this.gearSecondInfo.x + this.gearSecondInfo.width >= this.fireInfo.x + 10 && this.gearSecondInfo.y <= this.fireInfo.y + this.fireInfo.height && this.gearSecondInfo.y + this.gearSecondInfo.height >= this.fireInfo.y) {
-      this.gearSecondInfo.height -= 1;
+    if (this.gearSecondInfo.x <= this.fireInfo.x + this.fireInfo.width - 10 * scaleX && this.gearSecondInfo.x + this.gearSecondInfo.width >= this.fireInfo.x + 10 * scaleX && this.gearSecondInfo.y <= this.fireInfo.y + this.fireInfo.height && this.gearSecondInfo.y + this.gearSecondInfo.height >= this.fireInfo.y) {
+      this.gearSecondInfo.height -= 1 * scaleY;
       this.gearSecondInfo.melt = true;
     }
     if (this.gearSecondInfo.height <= 0) {
@@ -670,14 +633,14 @@ export default class Ninth {
   // 绘制飞机基座
   drawBase() {
     if (this.baseImage.complete) {
-      this.context.drawImage(this.baseImage, (this.canvas.width * 3 / 2 - this.baseImage.width * 2 - 10) + this.moveX, this.groundHeight + this.baseImage.height + 21, this.baseImage.width, this.baseImage.height)
+      this.context.drawImage(this.baseImage, (this.canvas.width * 3 / 2 - this.baseImage.width * scaleX * 2 - 10 * scaleX) + this.character.moveX, this.groundHeight + this.baseImage.height * scaleY + 21 * scaleY, this.baseImage.width * scaleX, this.baseImage.height * scaleY)
     }
   }
   // 绘制飞机的主体
   drawAirplane() {
     if (this.airplane.complete && this.airplaneInfo.show) {
       this.context.save();
-      this.context.translate(this.airplaneInfo.x + this.moveX + this.airplaneInfo.width / 2, this.airplaneInfo.y + this.airplaneInfo.height / 2);
+      this.context.translate(this.airplaneInfo.x + this.character.moveX + this.airplaneInfo.width / 2, this.airplaneInfo.y + this.airplaneInfo.height / 2);
       this.context.rotate(this.airplaneInfo.airplaneRotation);
       this.context.drawImage(this.airplane, -this.airplaneInfo.width / 2, -this.airplaneInfo.height / 2, this.airplaneInfo.width, this.airplaneInfo.height);
       this.context.restore();
@@ -692,7 +655,7 @@ export default class Ninth {
         soundManager.play('launch');
         this.airplaneInfo.launchOff--;
       }
-      if (this.airplaneInfo.y <= -2500) {
+      if (this.airplaneInfo.y <= -2500 * scaleY) {
         soundManager.play('boom');
         this.airplaneInfo.show = false;
         this.particlesShow = true;
@@ -716,7 +679,7 @@ export default class Ninth {
           }
         }
       }
-      this.context.drawImage(characterImg, this.character.x, this.character.y, characterImg.width / 2, characterImg.height / 2);
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
     } else if (this.character.theLastAction == 'left') {
       if (this.character.isShot) {
         characterImg = this.character.leftShotFrames[this.character.currentLeftShotIndex]
@@ -731,7 +694,7 @@ export default class Ninth {
           }
         }
       }
-      this.context.drawImage(characterImg, this.character.x, this.character.y, characterImg.width / 2, characterImg.height / 2);
+      this.context.drawImage(characterImg, this.character.x, this.character.y, this.character.width, this.character.height);
     }
   }
   // 更新绘制人物
@@ -760,7 +723,7 @@ export default class Ninth {
       }
     }
     // 判断是否与火焰碰撞
-    if (this.character.x + this.character.width >= this.fireInfo.x + 10 + this.moveX && this.character.x <= this.fireInfo.x - 20 + this.fireInfo.width + this.moveX && this.character.y + this.character.height >= this.fireInfo.y && this.character.y <= this.fireInfo.y + this.fireInfo.height && this.fireInfo.show) {
+    if (this.character.x + this.character.width >= this.fireInfo.x + 10 * scaleX + this.character.moveX && this.character.x <= this.fireInfo.x - 10 * scaleX + this.fireInfo.width + this.character.moveX && this.character.y + this.character.height >= this.fireInfo.y && this.character.y <= this.fireInfo.y + this.fireInfo.height && this.fireInfo.show) {
       // 游戏结束
       clearInterval(this.clearSetInterval);
       this.gameOver = true;
@@ -781,17 +744,17 @@ export default class Ninth {
       }
     }
     // 判断是否与第一个机关碰撞
-    if (this.character.x + this.character.width <= (this.canvas.width - this.leftGear.width) * 2 + this.moveX && this.character.x >= (this.canvas.width - this.leftGear.width) * 2 + this.moveX - this.leftGear.width && this.character.y + this.character.height >= this.groundHeight && this.character.y <= this.groundHeight + this.leftGear.height && (Math.round(this.airplaneInfo.airplaneRotation / (Math.PI / 2) % 4) == -3 || Math.round(this.airplaneInfo.airplaneRotation / (Math.PI / 2) % 4) == 1)) {
-      this.gearStatue = 'right';
-      if (!this.gearSound) {
+    if (this.character.x + this.character.width >= this.gearInfo.x + this.character.moveX && this.character.x <= this.gearInfo.x + this.gearInfo.width + this.character.moveX && this.character.y + this.character.height >= this.gearInfo.y && (Math.round(this.airplaneInfo.airplaneRotation / (Math.PI / 2) % 4) == -3 || Math.round(this.airplaneInfo.airplaneRotation / (Math.PI / 2) % 4) == 1)) {
+      this.gearInfo.statue = 'right';
+      if (!this.gearInfo.sound) {
         soundManager.play('gear');
-        this.gearSound = true;
+        this.gearInfo.sound = true;
       }
       //火箭飞升开启
       this.airplaneInfo.launch = true;
     }
     // 判断是否与第二个机关碰撞
-    if (this.ropeInfo.break && this.gearSecondInfo.melt && this.character.x <= this.gearSecondInfo.x + this.gearSecondInfo.width + this.moveX && this.character.x + this.character.width >= this.gearSecondInfo.x + this.moveX && this.character.y <= this.gearSecondInfo.y + this.gearSecondInfo.height && this.character.y + this.character.height >= this.gearSecondInfo.y) {
+    if (this.ropeInfo.break && this.gearSecondInfo.melt && this.character.x <= this.gearSecondInfo.x + this.gearSecondInfo.width + this.character.moveX && this.character.x + this.character.width >= this.gearSecondInfo.x + this.character.moveX && this.character.y <= this.gearSecondInfo.y + 32 * scaleY && this.character.y + this.character.height >= this.gearSecondInfo.y) {
       this.gearSecondInfo.gearStatue = 'right';
       if (!this.gearSecondInfo.gearSound) {
         soundManager.play('gear');
@@ -801,17 +764,17 @@ export default class Ninth {
       }
     }
     // 判断是否和魔法阵碰撞
-    if (this.gearSecondInfo.gearStatue == 'right' && this.character.x + this.character.width >= this.canvas.width - 64 + this.moveX && this.character.y >= this.transportInfo.y - 20) {
+    if (this.gearSecondInfo.gearStatue == 'right' && this.character.x + this.character.width >= this.canvas.width - 64 * scaleX + this.character.moveX && this.character.y >= this.transportInfo.y - 20 * scaleY) {
       this.cycleWaveInfo.show = true;
       this.transportSecondInfo.show = true;
     }
     // 判断是否和龙卷风碰撞
-    if(this.character.x <= this.lightShotInfo.x + this.lightShotInfo.width - 20 + this.moveX && this.character.x + this.character.width >= this.lightShotInfo.x + 20 + this.moveX && this.character.y <= this.lightShotInfo.y + this.lightShotInfo.height - 20 && this.character.y + this.character.height >= this.lightShotInfo.y && this.lightShotInfo.show){
+    if (this.character.x <= this.lightShotInfo.x + this.lightShotInfo.width - 20 * scaleX + this.character.moveX && this.character.x + this.character.width >= this.lightShotInfo.x + 20 * scaleX + this.character.moveX && this.character.y <= this.lightShotInfo.y + this.lightShotInfo.height - 20 * scaleY && this.character.y + this.character.height >= this.lightShotInfo.y && this.lightShotInfo.show) {
       // 游戏结束
       clearInterval(this.clearSetInterval);
       this.gameOver = true;
       this.character.isOnGround = false;
-      this.character.y = this.character.y + 20
+      this.character.y = this.character.y + 20 * scaleY
       soundManager.play('crack');
       soundManager.play('lose', 200);
       this.lastLifeCount--
@@ -827,23 +790,23 @@ export default class Ninth {
       }
     }
     // 判断是否和终点碰撞检测
-    if (this.character.x <= this.endDoorStatue.x + this.endDoorStatue.width - 10 + this.moveX && this.character.x + this.character.width >= this.endDoorStatue.x + 10 + this.moveX && this.character.y <= this.endDoorStatue.y + this.endDoorStatue.height / 2 && this.character.y + this.character.height >= this.endDoorStatue.y && this.bossInfo.isDead) {
+    if (this.character.x <= this.endDoorStatue.x + this.endDoorStatue.width - 10 * scaleX + this.character.moveX && this.character.x + this.character.width >= this.endDoorStatue.x + 10 * scaleX + this.character.moveX && this.character.y <= this.endDoorStatue.y + this.endDoorStatue.height / 2 && this.character.y + this.character.height >= this.endDoorStatue.y && this.bossInfo.isDead) {
       clearInterval(this.clearSetInterval);
       this.gameWin = true;
       backgroundMusic.stopBackgroundMusic();
       // 前往下一关卡
       wx.setStorageSync('trailNumber', 12)
       this.game.switchScene(new this.game.ending(this.game));
-    }else{
+    } else {
       this.gameWin = false;
     }
   }
   // 绘制血量槽
   drawHealthBar() {
-    if (!this.bossInfo.isDead){
-      const barWidth = 100; // 血量槽宽度
-      const barHeight = 10; // 血量槽高度
-      const posX = this.bossInfo.x + 20; // 血量槽左上角 x 坐标
+    if (!this.bossInfo.isDead) {
+      const barWidth = 100 * scaleX; // 血量槽宽度
+      const barHeight = 10 * scaleY; // 血量槽高度
+      const posX = this.bossInfo.x + 20 * scaleX; // 血量槽左上角 x 坐标
       const posY = this.bossInfo.y; // 血量槽左上角 y 坐标
       const healthPercentage = this.bossInfo.currentHealth / this.bossInfo.maxHealth; // 血量百分比
       // 绘制血量槽背景
@@ -856,7 +819,7 @@ export default class Ninth {
   }
   // 更新血量
   updateHealth() {
-    if (!this.bossInfo.isDead){
+    if (!this.bossInfo.isDead) {
       if (this.bossInfo.currentHealth <= 0) {
         this.bossInfo.isDead = true; // 标记 Boss 为死亡状态
         this.endDoorStatue.endDoorShow = true;
@@ -865,7 +828,7 @@ export default class Ninth {
   }
   // 绘制身体
   drawBossBody() {
-    if (!this.bossInfo.isDead){
+    if (!this.bossInfo.isDead) {
       if (!this.bossInfo.isShot) {
         this.context.drawImage(this.bossInfo.bodyFrame[this.bossInfo.currentBodyIndex], this.bossInfo.x, this.bossInfo.y, this.bossInfo.width, this.bossInfo.height);
       } else {
@@ -877,8 +840,8 @@ export default class Ninth {
   updateBossBody() {
     if (this.cycleWaveInfo.show && !this.bossInfo.isDead) {
       // 控制 boss 的浮动方向
-      const floatSpeed = 0.1; // 浮动速度
-      const floatRange = 20; // 浮动范围
+      const floatSpeed = 0.1 * scaleY; // 浮动速度
+      const floatRange = 20 * scaleY; // 浮动范围
       this.bossInfo.y += this.bossInfo.floatDirection * floatSpeed;
       // 检查是否达到浮动范围的上限或下限，如果是则改变浮动方向
       if (this.bossInfo.y <= this.bossInfo.initialY - floatRange || this.bossInfo.y >= this.bossInfo.initialY + floatRange) {
@@ -926,26 +889,26 @@ export default class Ninth {
   }
   // 绘制冲击波
   drawCycleWave() {
-    if (this.character.shotWave) {
-      if (this.direction == 'right') {
-        if (this.cycleImage.complete) {
+    if (this.character.shotWave){
+      if(this.cycleInfo.direction == 'right'){
+        if(this.cycleImage.complete){
           this.context.save();
-          this.context.translate(this.cycleX + 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
-          this.context.rotate(this.angle);
-          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.translate(this.cycleInfo.cycleX + 18 * scaleX + this.cycleInfo.cycleAddDistence, this.cycleInfo.cycleAddHeight + 8 * scaleY);
+          this.context.rotate(this.cycleInfo.angle);
+          this.context.drawImage(this.cycleImage, -8 * scaleY, -8 * scaleY, 16 * scaleY, 16 * scaleY);
           this.context.restore();
           // 增加角度以实现旋转
-          this.angle += 0.05;
+          this.cycleInfo.angle += 0.05;
         }
-      } else if (this.direction == 'left') {
-        if (this.cycleImage.complete) {
+      }else if(this.cycleInfo.direction == 'left'){
+        if(this.cycleImage.complete){
           this.context.save();
-          this.context.translate(this.cycleX - 18 + this.cycleAddDistence, this.cycleAddHeight + 8);
-          this.context.rotate(this.angle);
-          this.context.drawImage(this.cycleImage, -8, -8, 16, 16);
+          this.context.translate(this.cycleInfo.cycleX - 18 * scaleX + this.cycleInfo.cycleAddDistence, this.cycleInfo.cycleAddHeight + 8 * scaleY);
+          this.context.rotate(this.cycleInfo.angle);
+          this.context.drawImage(this.cycleImage, -8 * scaleY, -8 * scaleY, 16 * scaleY, 16 * scaleY);
           this.context.restore();
           // 增加角度以实现旋转
-          this.angle += 0.05;
+          this.cycleInfo.angle += 0.05;
         }
       }
     }
@@ -953,68 +916,66 @@ export default class Ninth {
   // 更新冲击波
   updateCycleWave() {
     if (this.character.shotWave) {
-      if (this.direction == 'right') {
-        if (this.cycleX + this.cycleAddDistence >= this.canvas.width - 20) {
+      if (this.cycleInfo.direction == 'right') {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence >= this.canvas.width - 20 * scaleX) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
-          this.angle = 0;
-          this.direction = '';
+          this.cycleInfo.cycleAddDistence = 0;
+          this.cycleInfo.angle = 0;
+          this.cycleInfo.direction = '';
         } else {
-          this.cycleAddDistence += this.cycleSpeed;
+          this.cycleInfo.cycleAddDistence += this.cycleInfo.speed;
         }
         // 如果冲击波和火箭碰撞检测
-        if (this.cycleX + this.cycleAddDistence >= this.airplaneInfo.x + this.moveX && this.cycleX <= this.airplaneInfo.x + this.airplaneInfo.width + this.moveX && this.cycleAddHeight + 16 >= this.airplaneInfo.y && this.cycleAddHeight <= this.airplaneInfo.y + this.airplaneInfo.height) {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence >= this.airplaneInfo.x + this.character.moveX && this.cycleInfo.cycleX <= this.airplaneInfo.x + this.airplaneInfo.width + this.character.moveX && this.cycleInfo.cycleAddHeight + 16 * scaleY >= this.airplaneInfo.y && this.cycleInfo.cycleAddHeight <= this.airplaneInfo.y + this.airplaneInfo.height) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
+          this.cycleInfo.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
           this.airplaneInfo.airplaneRotation -= Math.PI / 2;
         }
         // 如果冲击波和 boss 碰撞检测
-        if (this.cycleX + this.cycleAddDistence >= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleX <= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleAddHeight + 16 >= this.bossInfo.y && this.cycleAddHeight <= this.bossInfo.y + this.bossInfo.height - 30 && this.cycleWaveInfo.show && !this.bossInfo.isDead) {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence >= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleInfo.cycleX <= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleInfo.cycleAddHeight + 16 * scaleY >= this.bossInfo.y && this.cycleInfo.cycleAddHeight <= this.bossInfo.y + this.bossInfo.height - 30 * scaleY && this.cycleWaveInfo.show && !this.bossInfo.isDead) {
           this.bossInfo.currentHealth -= 25;
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
+          this.cycleInfo.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
         }
-        // 如果在魔法圈的范围内，冲击波就会转移到上面的冲击波
-        if (this.cycleX + this.cycleAddDistence > this.transportInfo.x + this.moveX && this.cycleX + this.cycleAddDistence < this.transportInfo.x + this.transportInfo.width + this.moveX && this.cycleAddHeight > this.transportInfo.y - 40 && this.cycleWaveInfo.show) {
-          this.cycleAddHeight = this.transportSecondInfo.y + 24;
-          this.cycleX = this.transportSecondInfo.x;
-          this.cycleAddDistence = 20;
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence > this.transportInfo.x + this.character.moveX && this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence < this.transportInfo.x + this.transportInfo.width + this.character.moveX && this.cycleInfo.cycleAddHeight > this.transportInfo.y - 40 * scaleY && this.cycleWaveInfo.show) {
+          this.cycleInfo.cycleAddHeight = this.transportSecondInfo.y + 24 * scaleY;
+          this.cycleInfo.cycleX = this.transportSecondInfo.x;
+          this.cycleInfo.cycleAddDistence = 20 * scaleX;
+          this.cycleInfo.cycleAddDistence += this.cycleInfo.speed;
         }
-      } else if (this.direction == 'left') {
-        if (this.cycleX + this.cycleAddDistence <= 20) {
+      } else if (this.cycleInfo.direction == 'left') {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence <= 20 * scaleX) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
-          this.angle = 0;
-          this.direction = '';
+          this.cycleInfo.cycleAddDistence = 0;
+          this.cycleInfo.angle = 0;
+          this.cycleInfo.direction = '';
         } else {
-          this.cycleAddDistence -= this.cycleSpeed;
+          this.cycleInfo.cycleAddDistence -= this.cycleInfo.speed;
         }
-        // 如果冲击波和火箭碰撞检测
-        if (this.cycleX + this.cycleAddDistence <= this.airplaneInfo.x + this.airplaneInfo.width + this.moveX && this.cycleX >= this.airplaneInfo.x + this.moveX && this.cycleAddHeight + 16 >= this.airplaneInfo.y && this.cycleAddHeight <= this.airplaneInfo.y + this.airplaneInfo.height) {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence <= this.airplaneInfo.x + this.airplaneInfo.width + this.character.moveX && this.cycleInfo.cycleX >= this.airplaneInfo.x + this.character.moveX && this.cycleInfo.cycleAddHeight + 16 * scaleY >= this.airplaneInfo.y && this.cycleInfo.cycleAddHeight <= this.airplaneInfo.y + this.airplaneInfo.height) {
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
+          this.cycleInfo.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
           this.airplaneInfo.airplaneRotation += Math.PI / 2;
         }
-        // 如果冲击波和 boss 碰撞检测
-        if (this.cycleX + this.cycleAddDistence >= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleX <= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleAddHeight + 16 >= this.bossInfo.y && this.cycleAddHeight <= this.bossInfo.y + this.bossInfo.height - 30 && this.cycleWaveInfo.show && !this.bossInfo.isDead) {
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence >= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleInfo.cycleX <= this.bossInfo.x + this.bossInfo.width / 3 && this.cycleInfo.cycleAddHeight + 16 * scaleY >= this.bossInfo.y && this.cycleInfo.cycleAddHeight <= this.bossInfo.y + this.bossInfo.height - 30 * scaleY && this.cycleWaveInfo.show && !this.bossInfo.isDead) {
           this.bossInfo.currentHealth -= 25;
           this.character.shotWave = false;
-          this.cycleAddDistence = 0;
+          this.cycleInfo.cycleAddDistence = 0;
           this.angle = 0;
           this.direction = '';
         }
-        // 如果在魔法圈的范围内，冲击波就会转移到上面的冲击波
-        if (this.cycleX + this.cycleAddDistence < this.transportInfo.x + this.transportInfo.width + this.moveX && this.cycleX + this.cycleAddDistence > this.transportInfo.x + this.moveX && this.cycleAddHeight > this.transportInfo.y - 40 && this.cycleWaveInfo.show) {
-          this.direction = 'right';
-          this.cycleAddHeight = this.transportSecondInfo.y + 24;
-          this.cycleX = this.transportSecondInfo.x;
-          this.cycleAddDistence = 20;
+        if (this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence < this.transportInfo.x + this.transportInfo.width + this.character.moveX && this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence > this.transportInfo.x + this.character.moveX && this.cycleInfo.cycleAddHeight > this.transportInfo.y - 40 * scaleY && this.cycleWaveInfo.show) {
+          this.cycleInfo.direction = 'right';
+          this.cycleInfo.cycleAddHeight = this.transportSecondInfo.y + 24 * scaleY;
+          this.cycleInfo.cycleX = this.transportSecondInfo.x;
+          this.cycleInfo.cycleAddDistence = 20 * scaleX;
+          this.cycleInfo.cycleAddDistence -= this.cycleInfo.speed;
         }
       }
     }
@@ -1022,7 +983,7 @@ export default class Ninth {
   // 绘制终点
   drawEndDoor() {
     if (this.endDoorStatue.endDoorShow) {
-      this.context.drawImage(this.endDoorImage, this.endDoorStatue.x + this.moveX, this.endDoorStatue.y, this.endDoorStatue.width, this.endDoorStatue.height)
+      this.context.drawImage(this.endDoorImage, this.endDoorStatue.x + this.character.moveX, this.endDoorStatue.y, this.endDoorStatue.width, this.endDoorStatue.height)
     }
   }
   // 更新终点
@@ -1030,11 +991,12 @@ export default class Ninth {
     if (!this.bossInfo.isDead) {
       this.endDoorStatue.x = this.bossInfo.x;
       this.endDoorStatue.y = this.bossInfo.y;
-    }
-    if (this.endDoorStatue.endDoorShow) {
-      if (this.endDoorStatue.y <= this.groundHeight - this.endDoorImage.height / 2){
-        this.endDoorStatue.velocityY += 0.3;
-        this.endDoorStatue.y += this.endDoorStatue.velocityY;
+    }else{
+      if (this.endDoorStatue.endDoorShow) {
+        if (this.endDoorStatue.y <= this.groundHeight - this.endDoorStatue.height / 2) {
+          this.endDoorStatue.velocityY += 0.3;
+          this.endDoorStatue.y += this.endDoorStatue.velocityY;
+        }
       }
     }
   }
@@ -1042,7 +1004,7 @@ export default class Ninth {
   drawTornado() {
     if (this.lightShot.complete && this.lightShotInfo.show) {
       this.context.save();
-      this.context.translate(this.lightShotInfo.x + this.moveX + this.lightShotInfo.width / 2, this.lightShotInfo.y);
+      this.context.translate(this.lightShotInfo.x + this.character.moveX + this.lightShotInfo.width / 2, this.lightShotInfo.y);
       this.context.rotate(this.lightShotInfo.angle);
       this.context.drawImage(this.lightShot, -this.lightShotInfo.width / 2, -this.lightShotInfo.height / 2, this.lightShotInfo.width, this.lightShotInfo.height);
       this.context.restore();
@@ -1052,9 +1014,9 @@ export default class Ninth {
   }
   // 更新发射波
   updateTornado() {
-    if(this.lightShotInfo.show){
+    if (this.lightShotInfo.show) {
       this.lightShotInfo.x -= this.character.speed;
-      if (this.lightShotInfo.x <= -128){
+      if (this.lightShotInfo.x <= -128 * scaleX) {
         this.lightShotInfo.show = false;
         this.lightShotInfo.x = this.canvas.width * 2;
       }
@@ -1069,17 +1031,16 @@ export default class Ninth {
     const arrowSize = joystickSize * 0.5;
     // 绘制方向键（D-Pad）
     const padSize = joystickSize * 0.6;
-    const buttonSize = padSize * 1 + 4;
-    // 保存当前context状态
+    const buttonSize = padSize;
     this.context.save();
     // 上方向键
-    this.drawRectangle(23 + arrowSize, joystickY - padSize / 2 - buttonSize, buttonSize, 'up');
+    this.drawRectangle(10 + arrowSize * 4 / 3, joystickY - padSize / 2 - buttonSize, buttonSize, 'up');
     // 下方向键
-    this.drawRectangle(23 + arrowSize, joystickY + padSize / 2, buttonSize, 'down');
+    this.drawRectangle(10 + arrowSize * 4 / 3, joystickY + padSize / 2, buttonSize, 'down');
     // 左方向键
-    this.drawRectangle(13, joystickY - buttonSize / 2, buttonSize, 'left');
+    this.drawRectangle(10, joystickY - buttonSize / 2, buttonSize, 'left');
     // 右方向键
-    this.drawRectangle(33 + arrowSize * 2, joystickY - buttonSize / 2, buttonSize, 'right');
+    this.drawRectangle(10 + arrowSize * 8 / 3, joystickY - buttonSize / 2, buttonSize, 'right');
     // 绘制跳跃键
     this.drawRectangle(menuButtonInfo.right - buttonSize, joystickY - padSize / 2 - buttonSize / 2, buttonSize, 'jump');
     // 绘制发射键
@@ -1102,12 +1063,12 @@ export default class Ninth {
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
     } else if (direction == 'jump') {
-      this.context.fillStyle = '#ff880077';
+      this.context.fillStyle = '#ffffff77';
       this.context.beginPath();
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
     } else if (direction == 'shot') {
-      this.context.fillStyle = '#00ff9977';
+      this.context.fillStyle = '#ffffff77';
       this.context.beginPath();
       this.context.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
       this.context.fill();
@@ -1142,10 +1103,10 @@ export default class Ninth {
         this.context.lineTo(x + size / 2 - arrowSize / 2, y + size / 2 + arrowSize / 2);
         break;
       case 'jump':
-        this.context.fillText('J', x + size / 2, y + size / 2 + 2);
+        this.context.fillText('J', x + size / 2, y + size / 2 + 2 * scaleY);
         break;
       case 'shot':
-        this.context.fillText('S', x + size / 2, y + size / 2 + 2);
+        this.context.fillText('S', x + size / 2, y + size / 2 + 2 * scaleY);
         break;
     }
     this.context.closePath();
@@ -1155,10 +1116,6 @@ export default class Ninth {
   draw() {
     // 绘制背景
     this.drawBackground();
-    // 绘制游戏活动区域
-    this.drawActionZone();
-    // 绘制移动按钮所在区域
-    this.drawJoystick();
     // 绘制游戏背景
     this.drawGameBackground();
     // 绘制独轮车
@@ -1197,6 +1154,8 @@ export default class Ninth {
     this.drawCharacter();
     // 绘制发射波
     this.drawTornado();
+    // 绘制移动按钮所在区域
+    this.drawJoystick();
     // 绘制返回按钮
     this.drawBack();
     // 绘制关卡显示
@@ -1210,13 +1169,12 @@ export default class Ninth {
     // 当游戏结束时无返回值
     if (this.gameOver || this.gameWin) {
       backgroundMusic.stopBackgroundMusic();
-      if (this.lastLifeCount == 0) {
-        // 绘制失败场景和按钮
+      if(this.lastLifeCount == 0){
         if (this.failTipsImage.complete) {
-          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width) / 2, (this.canvas.height - this.failTipsImage.height) / 2 - this.failTipsImage.height / 2);
+          this.context.drawImage(this.failTipsImage, (this.canvas.width - this.failTipsImage.width * scaleX) / 2, (this.canvas.height - this.failTipsImage.height * scaleY) / 2 - this.failTipsImage.height * scaleY / 2, this.failTipsImage.width * scaleX, this.failTipsImage.height * scaleY);
         }
-        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40);
-        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110);
+        this.buttonStartInfo = drawIconButton(this.context, "重新开始", this.canvas.width / 2, this.canvas.height / 2 + 40 * scaleY);
+        this.buttonShareInfo = drawIconButton(this.context, "分享好友", this.canvas.width / 2, this.canvas.height / 2 + 110 * scaleY);
       }
     } else {
       let self = this;
@@ -1260,7 +1218,7 @@ export default class Ninth {
     }
   }
   // 倒计时运行函数
-  countdownFunc(_name) {
+  countdownFunc() {
     if (this.clockDownTime > 0) {
       this.clockDownTime--;
     } else {
@@ -1293,7 +1251,12 @@ export default class Ninth {
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
       clearInterval(this.clearSetInterval);
+      this.gameOver = true;
       backgroundMusic.stopBackgroundMusic();
+      if (this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
       btn.onClick();
       return
     }
@@ -1326,27 +1289,27 @@ export default class Ninth {
     // 绘制方向键（矩形）
     const arrowSize = joystickSize * 0.5;
     const padSize = joystickSize * 0.6;
-    const buttonSize = padSize * 1;
+    const buttonSize = padSize;
     // 当游戏结束时无返回值
-    if (this.gameOver || this.gameWin) {
+    if (this.gameOver || this.gameWin){
       return;
     }
     // 判断点击位置是否在方向键上
     if (
-      touchX >= 23 + arrowSize && touchX <= 23 + arrowSize + buttonSize &&
+      touchX >= 10 + arrowSize * 4 / 3 && touchX <= 10 + arrowSize * 4 / 3 + buttonSize &&
       touchY >= joystickY - padSize / 2 - buttonSize && touchY <= joystickY - padSize / 2
     ) {
       // 上方向键
       // this.pressingDirection = 'up';
       // this.character.theLastAction = 'up';
     } else if (
-      touchX >= 23 + arrowSize && touchX <= 23 + arrowSize + buttonSize &&
+      touchX >= 10 + arrowSize * 4 / 3 && touchX <= 10 + arrowSize * 4 / 3 + buttonSize &&
       touchY >= joystickY + padSize / 2 && touchY <= joystickY + padSize / 2 + buttonSize
     ) {
       // 停止行为
       this.stopAction();
     } else if (
-      touchX >= 13 && touchX <= 13 + buttonSize &&
+      touchX >= 10 && touchX <= 10 + buttonSize &&
       touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2 && !this.character.isFall
     ) {
       // 左方向键
@@ -1354,7 +1317,7 @@ export default class Ninth {
       this.character.theLastAction = 'left';
       this.moveLeftCharacter();
     } else if (
-      touchX >= 33 + arrowSize * 2 && touchX <= 33 + arrowSize * 2 + buttonSize &&
+      touchX >= 10 + arrowSize * 8 / 3 && touchX <= 10 + arrowSize * 8 / 3 + buttonSize &&
       touchY >= joystickY - buttonSize / 2 && touchY <= joystickY + buttonSize / 2 && !this.character.isFall
     ) {
       // 右方向键
@@ -1363,20 +1326,20 @@ export default class Ninth {
       this.moveRightCharacter();
     } else if (
       touchX >= menuButtonInfo.right - buttonSize * 2.5 && touchX <= menuButtonInfo.right - buttonSize * 2.5 + buttonSize &&
-      touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3 / 2) {
+      touchY >= joystickY - padSize / 2 + buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize * 3/2) {
       // 发射
       this.character.isShot = true;
-      if (!this.character.shotWave) {
+      if (!this.character.shotWave){
         this.toShot();
         soundManager.play('throw');
-      } else {
+      }else{
         // 第二次按下后瞬移到冲击波所在位置
         this.toWave();
         soundManager.play('move');
       }
-    } else if (
+    }else if (
       touchX >= menuButtonInfo.right - buttonSize && touchX <= menuButtonInfo.right &&
-      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2 && !this.character.isFall) {
+      touchY >= joystickY - padSize / 2 - buttonSize / 2 && touchY <= joystickY - padSize / 2 + buttonSize / 2 &&!this.character.isFall) {
       // 跳跃
       this.jumpHandler();
       soundManager.play('jump');
@@ -1402,8 +1365,8 @@ export default class Ninth {
   // 向右移动动作
   moveRightCharacter() {
     this.character.x += this.character.speed;
-    if (this.character.x >= this.canvas.width - 20) {
-      this.character.x = this.canvas.width - 20
+    if (this.character.x >= this.canvas.width - 20 * scaleX) {
+      this.character.x = this.canvas.width - 20 * scaleX
     }
     this.character.currentRightFrameIndex = (this.character.currentRightFrameIndex + 1) % this.character.rightFrames.length;
   }
@@ -1421,29 +1384,29 @@ export default class Ninth {
       this.character.currentRightShotIndex = (this.character.currentRightShotIndex + 1) % this.character.rightShotFrames.length;
       this.character.currentLeftShotIndex = (this.character.currentLeftShotIndex + 1) % this.character.leftShotFrames.length;
       this.character.shotWave = true;
-      this.cycleAddHeight = this.character.y;
+      this.cycleInfo.cycleAddHeight = this.character.y;
       if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
-        this.cycleX = this.character.x;
-        this.direction = 'right';
+        this.cycleInfo.cycleX = this.character.x;
+        this.cycleInfo.direction = 'right';
       } else if (this.character.theLastAction == 'left') {
-        this.cycleX = this.character.x + 18;
-        this.direction = 'left';
+        this.cycleInfo.cycleX = this.character.x + 18;
+        this.cycleInfo.direction = 'left';
       }
     }
   }
   // 瞬移的事件处理
   toWave() {
     if (this.character.theLastAction == 'left') {
-      this.character.x = this.cycleX - 24 + this.cycleAddDistence;
+      this.character.x = this.cycleInfo.cycleX - 24 + this.cycleInfo.cycleAddDistence;
     } else if (this.character.theLastAction == 'right' || this.character.theLastAction == '') {
-      this.character.x = this.cycleX + this.cycleAddDistence;
+      this.character.x = this.cycleInfo.cycleX + this.cycleInfo.cycleAddDistence;
     }
-    this.character.y = this.cycleAddHeight
+    this.character.y = this.cycleInfo.cycleAddHeight
     this.character.shotWave = false;
-    this.cycleAddDistence = 0;
-    this.angle = 0;
-    this.direction = '';
-    this.cycleX = 0;
+    this.cycleInfo.cycleAddDistence = 0;
+    this.cycleInfo.angle = 0;
+    this.cycleInfo.direction = '';
+    this.cycleInfo.cycleX = 0;
     if (this.character.y == this.groundHeight) {
       this.character.isOnGround = true;
       this.character.jumping = false;
@@ -1451,7 +1414,7 @@ export default class Ninth {
       this.character.isOnGround = false;
       this.character.jumping = true;
       this.character.jumpStartY = this.groundHeight;
-      this.character.jumpHeight = this.groundHeight - this.cycleAddHeight;
+      this.character.jumpHeight = this.groundHeight - this.cycleInfo.cycleAddHeight;
     }
     this.character.isFall = false;
   }
@@ -1468,13 +1431,13 @@ export default class Ninth {
   resetGame() {
     backgroundMusic.setBackgroundMusicSource('audio/cinemaback.mp3');
     backgroundMusic.playBackgroundMusic();
-    // 绘制人物
+    this.groundHeightChange = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
     this.character = {
-      width: 20,
-      height: 35,
-      x: 35,
+      width: 20 * scaleX,
+      height: 35 * scaleY,
+      x: 35 * scaleX,
       y: this.groundHeight,
-      speed: systemInfo.screenWidth * 0.005, // 人物每次移动的距离
+      speed: 1 * scaleX, // 人物每次移动的距离
       leftFrames: [], // 存储向左帧图片的数组
       rightFrames: [], // 存储向右帧图片的数组
       leftJumpFrames: [], // 存储向左弹跳图片的数组
@@ -1491,137 +1454,127 @@ export default class Ninth {
       jumping: false,
       jumpStartY: 0,
       jumpStartTime: 0,
-      jumpHeight: this.canvas.height * 0.06, // 跳跃高度
+      jumpHeight: 35 * scaleY, // 跳跃高度
       gravity: 0.3, // 重力
-      jumpSpeed: -10, // 起跳初始速度
+      jumpSpeed: -10 * scaleY, // 起跳初始速度
       velocityY: 0, // 纵向速度
       isOnGround: true, // 初始化在地面
       isShot: false, // 发射状态
       shotWave: false, // 发射冲击波状态
       isFall: false, // 是否处于掉落状态
+      moveX: 0,
     };
-    // 向右移动时候图片集锦
     const framePathsRight = ['image/right1.png', 'image/right1.png', 'image/right2.png', 'image/right2.png', 'image/right3.png', 'image/right3.png'];
     for (const path of framePathsRight) {
       const frame = new Image();
       frame.src = path;
       this.character.rightFrames.push(frame);
     }
-    // 向左移动时候图片集锦
     const framePathsLeft = ['image/left1.png', 'image/left1.png', 'image/left2.png', 'image/left2.png', 'image/left3.png', 'image/left3.png'];
     for (const path of framePathsLeft) {
       const frame = new Image();
       frame.src = path;
       this.character.leftFrames.push(frame);
     }
-    // 向右移动跳动的图片集锦
     const framePathsRightJump = ['image/rightjump1.png', 'image/rightjump2.png'];
     for (const path of framePathsRightJump) {
       const frame = new Image();
       frame.src = path;
       this.character.rightJumpFrames.push(frame);
     }
-    // 向左移动弹跳的图片集锦
     const framePathsLeftJump = ['image/leftjump1.png', 'image/leftjump2.png'];
     for (const path of framePathsLeftJump) {
       const frame = new Image();
       frame.src = path;
       this.character.leftJumpFrames.push(frame);
     }
-    // 向右发射的图片集锦
     const framePathsRightShot = ['image/shot1.png', 'image/shot2.png'];
     for (const path of framePathsRightShot) {
       const frame = new Image();
       frame.src = path;
       this.character.rightShotFrames.push(frame);
     }
-    // 向左发射的图片集锦
     const framePathsLeftShot = ['image/shot3.png', 'image/shot4.png'];
     for (const path of framePathsLeftShot) {
       const frame = new Image();
       frame.src = path;
       this.character.leftShotFrames.push(frame);
     }
-    // 向右死掉的图片集锦
     const framePathsRightDead = ['image/rightdown.png'];
     for (const path of framePathsRightDead) {
       const frame = new Image();
       frame.src = path;
       this.character.rightDown.push(frame);
     }
-    // 向左死掉的图片集锦
     const framePathsLeftDead = ['image/leftdown.png'];
     for (const path of framePathsLeftDead) {
       const frame = new Image();
       frame.src = path;
       this.character.leftDown.push(frame);
     }
-    this.moveX = 0;
-    // 判断机关状态
-    this.gearStatue = 'left';
-    // 是否让机关响起了
-    this.gearSound = false;
-    // 第二个机关信息
+    this.cycleInfo = {
+      cycleX: 0,
+      cycleAddHeight: 0,
+      cycleAddDistence: 0,
+      speed: 2 * scaleX,
+      angle: 0,
+      direction: ''
+    }
+    this.endDoorStatue = {
+      x: 0,
+      y: 0,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      endDoorShow: false,
+      velocityY: 0,
+      gravity: 0.3,
+    }
+    this.transportInfo = {
+      x: this.canvas.width - 64 * scaleY,
+      y: this.groundHeight + 10 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      show: true
+    }
+    this.transportSecondInfo = {
+      x: -20 * scaleX,
+      y: menuButtonInfo.bottom + 60 * scaleY,
+      width: 64 * scaleY,
+      height: 64 * scaleY,
+      show: false,
+      direction: 1
+    }
+    this.cycleWaveInfo = {
+      x: this.canvas.width - 32 * scaleY,
+      y: this.groundHeight - 50 * scaleY,
+      width: 16 * scaleY,
+      height: 16 * scaleY,
+      show: false
+    }
+    this.gearInfo = {
+      x: (this.canvas.width - 32 * scaleX) * 2,
+      y: this.groundHeight,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
+      statue: 'left',
+      sound: false
+    }
     this.gearSecondInfo = {
-      x: -32,
-      y: this.groundHeight - this.canvas.height * 0.06 - 110,
-      width: 32,
-      height: 32,
+      x: -32 * scaleX,
+      y: this.groundHeight - this.canvas.height * 0.06 - 105 * scaleY,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
       velocityY: 0,
       direction: 1,
       gearStatue: 'left',
       gearSound: false,
       melt: false, // 是否化了
     }
-    // 绳子信息
-    this.ropeInfo = {
-      startX: 0,
-      startY: this.groundHeight - this.canvas.height * 0.06 - 50,
-      endX: this.canvas.width * 2,
-      endY: this.groundHeight - this.canvas.height * 0.06 - 50,
-      controlX: this.canvas.width / 2,
-      controlY: this.groundHeight - this.canvas.height * 0.06 - 30,
-      color: '#333',
-      width: 5,
-      break: false,
-    }
-    // 独轮车信息
-    this.unicycleInfo = {
-      x: -32,
-      y: this.groundHeight - this.canvas.height * 0.06 - 78,
-      width: 32,
-      height: 32,
-      velocityY: 0,
-      direction: 1 // 1 为向右，-1 为向左
-    }
-    // 记录生命总数
-    this.lastLifeCount = null;
-    // 记录倒计时时间
-    this.clockDownTime = 90;
-    // 只运行一次
-    this.runLimit = 1;
-    // 雪粒子集合
-    this.particles = [];
-    // 是否显示雪粒子
-    this.particlesShow = false;
-    // 飞机信息
-    this.airplaneInfo = {
-      x: this.canvas.width * 3 / 2 - 100,
-      y: this.groundHeight - 24,
-      width: 54,
-      height: 34,
-      airplaneRotation: 0,
-      velocityY: 0,
-      launch: false,
-      launchOff: 1,
-      show: true
-    }
-    // 绘制火焰
     this.fireInfo = {
-      x: this.canvas.width / 2 + 40,
-      y: this.groundHeight - 72,
-      width: 125,
-      height: 125,
+      x: this.canvas.width / 2 + 40 * scaleX,
+      y: this.groundHeight - 75 * scaleY,
+      width: 125 * scaleY,
+      height: 125 * scaleY,
       framePath: [],
       show: true,
       currentIndex: 0
@@ -1632,37 +1585,43 @@ export default class Ninth {
       frame.src = path;
       this.fireInfo.framePath.push(frame);
     }
-    this.transportInfo = {
-      x: this.canvas.width - 64,
-      y: this.groundHeight + 10,
-      width: 64,
-      height: 64,
+    this.airplaneInfo = {
+      x: this.canvas.width * 3 / 2 - 100 * scaleX,
+      y: this.groundHeight - 24 * scaleY,
+      width: 54 * scaleX,
+      height: 34 * scaleY,
+      airplaneRotation: 0,
+      velocityY: 0,
+      launch: false,
+      launchOff: 1,
       show: true
     }
-    // 第二个魔法阵信息
-    this.transportSecondInfo = {
-      x: -20,
-      y: menuButtonInfo.bottom + 60,
-      width: 64,
-      height: 64,
-      show: false,
-      direction: 1
+    // 绳子信息
+    this.ropeInfo = {
+      startX: 0,
+      startY: this.groundHeight - this.canvas.height * 0.06 - 50 * scaleY,
+      endX: this.canvas.width,
+      endY: this.groundHeight - this.canvas.height * 0.06 - 50 * scaleY,
+      controlX: this.canvas.width / 2,
+      controlY: this.groundHeight - this.canvas.height * 0.06 - 30 * scaleY,
+      color: '#333',
+      width: 5,
+      break: false,
     }
-    // 绘制循环提示
-    this.cycleWaveInfo = {
-      x: this.canvas.width - 32,
-      y: this.groundHeight - 50,
-      width: 16,
-      height: 16,
-      show: false
+    this.unicycleInfo = {
+      x: -32 * scaleX,
+      y: this.groundHeight - this.canvas.height * 0.06 - 73 * scaleY,
+      width: 32 * scaleY,
+      height: 32 * scaleY,
+      velocityY: 0,
+      direction: 1 // 1 为向右，-1 为向左
     }
-    // boss设置
     this.bossInfo = {
       x: this.canvas.width * 2,
-      y: menuButtonInfo.bottom + 60,
-      initialY: menuButtonInfo.bottom + 60,
-      width: 128,
-      height: 128,
+      y: menuButtonInfo.bottom + 60 * scaleY,
+      initialY: menuButtonInfo.bottom + 60 * scaleY,
+      width: 128 * scaleY,
+      height: 128 * scaleY,
       wingFrame: [],
       bodyFrame: [],
       shotFrame: [],
@@ -1698,34 +1657,24 @@ export default class Ninth {
       frame.src = path;
       this.bossInfo.shotFrame.push(frame);
     }
-    // 冲击波状态
     this.lightShotInfo = {
       x: this.canvas.width * 2,
       y: this.groundHeight,
-      width: 128,
-      height: 128,
+      width: 128 * scaleY,
+      height: 128 * scaleY,
       angle: 0,
       show: false,
     }
-    // 终点状态
-    this.endDoorStatue = {
-      x: 0,
-      y: 0,
-      width: 64,
-      height: 64,
-      endDoorShow: false,
-      velocityY: 0,
-      gravity: 0.3,
-    }
-    // 重置冲击波数据
-    this.cycleAddDistence = 0;
-    this.cycleAddHeight = 0;
-    this.angle = 0; // 冲击波旋转角度
-    this.circleAngle = 0; // 冲击波提示
-    this.cycleX = 0; // 记录发出冲击波的初始位置
-    this.direction = ''; // 记录冲击波方向
-    this.gameOver = false; // 记录游戏是否结束
+    this.lastLifeCount = null;
+    this.clockDownTime = 90;
+    this.runLimit = 1;
+    this.particles = [];
+    this.particlesShow = false;
+    this.pressingDirection = null;
+    this.gameOver = false;
     this.gameWin = false;
+    this.buttonStartInfo = "";
+    this.buttonShareInfo = "";
     this.clearSetInterval = '';
   }
   // 页面销毁机制
@@ -1734,7 +1683,7 @@ export default class Ninth {
     wx.offTouchStart(this.touchStartHandler.bind(this));
     wx.offTouchEnd(this.touchEndHandler.bind(this));
     // 清理加载图片
-    this.backButton.image.src = '';
+    this.backButton = '';
     this.gameBackground.src = '';
     this.gameBackgroundRight.src = '';
     this.yardImage.src = '';

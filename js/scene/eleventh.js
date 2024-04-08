@@ -877,16 +877,16 @@ export default class Eleventh {
       // 更新关灯逻辑
       this.updateLightOff();
       // 更新倒计时运行
-      // if (this.runLimit >= 1){
-      //   this.runLimit--;
-      //   this.clearSetInterval = setInterval(function() {
-      //     self.countdownFunc();
-      //   }, 1000);
-      // }
+      if (this.runLimit >= 1){
+        this.runLimit--;
+        this.clearSetInterval = setInterval(function() {
+          self.countdownFunc();
+        }, 1000);
+      }
     }
   }
   // 倒计时运行函数
-  countdownFunc(_name) {
+  countdownFunc() {
     if (this.clockDownTime > 0) {
       this.clockDownTime--;
     } else {
@@ -918,14 +918,14 @@ export default class Eleventh {
     // 点击返回按钮事件
     if (touchX >= btn.x && touchX <= btn.x + btn.width &&
       touchY >= btn.y && touchY <= btn.y + btn.height) {
-        clearInterval(this.clearSetInterval);
-        this.gameOver = true;
-        backgroundMusic.stopBackgroundMusic();
-        if (this.lastLifeCount == 0){
-          wx.setStorageSync('lifeCount', 2);
-          wx.setStorageSync('trailNumber', '')
-        }
-        btn.onClick();
+      clearInterval(this.clearSetInterval);
+      this.gameOver = true;
+      backgroundMusic.stopBackgroundMusic();
+      if (this.lastLifeCount == 0) {
+        wx.setStorageSync('lifeCount', 2);
+        wx.setStorageSync('trailNumber', '')
+      }
+      btn.onClick();
       return
     }
     if (this.gameOver) {

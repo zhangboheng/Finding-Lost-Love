@@ -818,7 +818,7 @@ export default class Tenth {
     }
   }
   // 倒计时运行函数
-  countdownFunc(_name) {
+  countdownFunc() {
     if (this.clockDownTime > 0) {
       this.clockDownTime--;
     } else {
