@@ -151,7 +151,7 @@ export default class Playground {
     ) {
       clearInterval(this.timerId);
       backgroundMusic.stopBackgroundMusic();
-      this.game.switchScene(new this.game.playground(this.game));
+      this.game.switchScene(new this.game.eighth(this.game));
     }
   }
   // 页面销毁机制
