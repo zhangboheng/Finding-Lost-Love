@@ -306,7 +306,7 @@ export default class Tenth {
   // 绘制游戏背景
   drawGameBackground() {
     if (this.gameBackground.complete) {
-      this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
+      this.context.drawImage(this.gameBackground, 0, 0, this.canvas.width, this.canvas.height * 0.6)
     }
   }
   // 绘制陆地
@@ -386,11 +386,11 @@ export default class Tenth {
     }
     // 判断是否处于跳跃
     if (this.character.jumping) {
-      this.character.velocityY -= this.character.gravity;
-      this.character.y += this.character.velocityY;
       if (this.groundHeightChange - this.character.y > this.character.jumpHeight) {
         this.character.gravity = -0.3;
       }
+      this.character.velocityY -= this.character.gravity;
+      this.character.y += this.character.velocityY;
       // 如果达到地面，结束跳跃
       if (this.character.y >= this.character.jumpStartY && !this.character.isOnGround) {
         this.character.jumping = false;

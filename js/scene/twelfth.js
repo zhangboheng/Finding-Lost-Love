@@ -421,7 +421,7 @@ export default class Ninth {
   // 绘制游戏背景
   drawGameBackground() {
     if (this.gameBackground.complete) {
-      this.context.drawImage(this.gameBackground, this.moveX, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
+      this.context.drawImage(this.gameBackground, this.moveX, 0, this.canvas.width, this.canvas.height * 0.6)
     }
     if (this.gameBackgroundRight.complete) {
       this.context.drawImage(this.gameBackgroundRight, this.canvas.width + this.moveX, 0, this.canvas.width, this.canvas.height * 0.6 - 6)
