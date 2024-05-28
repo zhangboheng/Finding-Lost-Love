@@ -17,6 +17,14 @@ export default class Fith {
     backgroundMusic.playBackgroundMusic();
     soundManager.setMusicState(wx.getStorageSync('musicEnabled'));
     /* 加载音乐音效管理器结束 */
+    /* 加载广告初始化开始 */
+    this.interstitialAd = null;
+    if (wx.createInterstitialAd){
+      this.interstitialAd = wx.createInterstitialAd({
+        adUnitId: 'adunit-54ab1612689b4dc7'
+      })
+    }
+    /* 加载广告初始化结束 */
     /* 常量设置区域开始 */
     this.groundHeight = menuButtonInfo.bottom + this.canvas.height * 0.5 - 33 * scaleY;
     this.groundHeightChange = this.groundHeight - this.canvas.height * 0.06 - 20 * scaleY;
@@ -234,11 +242,11 @@ export default class Fith {
   }
   // 绘制返回按钮
   drawBack() {
-    this.backButton = createBackButton(this.context, 10, menuButtonInfo.top, 'image/reply.png', () => {
+    this.backButton = createBackButton(this.context, (this.canvas.width - 32) / 2, this.canvas.height * 0.9, 'image/return.png', () => {
       this.game.switchScene(new this.game.startup(this.game));
     });
     if (this.backButton.image.complete) {
-      this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y);
+      this.context.drawImage(this.backButton.image, this.backButton.x, this.backButton.y, 32 * scaleY, 32 * scaleY);
     }
   }
   // 绘制关卡显示
@@ -246,7 +254,7 @@ export default class Fith {
     const number = '05';
     const textWidth = this.context.measureText(number).width;
     const startX = this.canvas.width - textWidth - 10;
-    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
+    const scoreY = menuButtonInfo.top + 20 * scaleY; // 分数的y坐标
     this.context.save();
     this.context.fillStyle = '#ffffff99';
     this.context.textAlign = 'left'; // 文本左对齐
@@ -289,8 +297,8 @@ export default class Fith {
     const startX = 10;
     const iconX = startX;
     const scoreX = iconX + iconSize + iconPadding;
-    const iconY = menuButtonInfo.bottom + 2 * scaleY; // 图标的y坐标
-    const scoreY = menuButtonInfo.bottom + 20 * scaleY; // 分数的y坐标
+    const iconY = menuButtonInfo.top + 2 * scaleY; // 图标的y坐标
+    const scoreY = menuButtonInfo.top + 20 * scaleY; // 分数的y坐标
     // 绘制图标
     if (this.lifeCount.complete) {
       this.context.drawImage(this.lifeCount, iconX, iconY, iconSize, iconSize);
@@ -809,6 +817,11 @@ export default class Fith {
         wx.setStorageSync('lifeCount', 2);
         wx.setStorageSync('trailNumber', '');
         this.game.switchScene(new this.game.begin(this.game));
+        if (this.interstitialAd) {
+          this.interstitialAd.show().catch((err) => {
+            console.error('插屏广告显示失败', err)
+          })
+        }
       }
       if (touchX >= this.buttonShareInfo.x && touchX <= this.buttonShareInfo.x + this.buttonShareInfo.width &&
         touchY >= this.buttonShareInfo.y && touchY <= this.buttonShareInfo.y + this.buttonShareInfo.height) {

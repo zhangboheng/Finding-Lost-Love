@@ -2,7 +2,7 @@ import {
   createBackButton
 } from '../../utils/button';
 import { soundManager, backgroundMusic, menuButtonInfo, scaleX, scaleY } from '../../utils/global';
-export default class Playground {
+export default class Ending {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;

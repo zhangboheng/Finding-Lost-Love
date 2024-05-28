@@ -8,6 +8,8 @@ export default class Settings {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
+    // 底部 banner
+    this.bannerAd = '';
     /* 图片加载区域开始 */
     this.backgroundImage = new Image();
     this.backgroundImage.src = 'image/thumbnail.jpg';
@@ -23,6 +25,26 @@ export default class Settings {
     this.tabs = ['设置', '历史', '团队', '关于', '产品'];
     this.selectedIndex = 0;
     /* 常量设置区域结束 */
+    this.drawAd();
+  }
+  // 绘制广告
+  drawAd() {
+    this.bannerAd = wx.createBannerAd({
+      adUnitId: 'adunit-4f0b6ad55f2a8b10',
+      style: {
+          left: 10,
+          top: 0,
+          width: this.canvas.width - 20
+      }
+    });
+    this.bannerAd.show()
+    this.bannerAd.onResize(res => {
+      this.bannerAd.style.top = this.canvas.height - res.height - 10
+    })
+    // 监听 banner 广告错误事件
+    this.bannerAd.onError(err => {
+      console.error(err.errMsg)
+    });
   }
   // 绘制背景
   drawBackground() {
@@ -148,8 +170,8 @@ export default class Settings {
       this.context.closePath();
       this.context.fill();
     } else if (this.selectedIndex === 1) {
-      const arr = ['版本 1.0.0', 'Demo 版本发布'];
-      const list = ['2024-03-20', ''];
+      const arr = ['版本 1.0.1', '关卡中改善布局', '增加广告', '', '版本 1.0.0', 'Demo 版本发布'];
+      const list = ['2024-05-28', '', '', '', '2024-03-20', ''];
       // 计算文本高度和总内容高度
       const textHeight = fontSize * 1.2;
       const contentHeight = arr.length * textHeight + 20 * scaleY;
@@ -244,8 +266,6 @@ export default class Settings {
     this.context.restore();
   }
   draw() {
-    // 清除整个画布
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     // 绘制背景
     this.drawBackground();
     // 绘制返回按钮
@@ -309,6 +329,8 @@ export default class Settings {
   }
   // 页面销毁机制
   destroy() {
+    this.bannerAd.hide();
+    this.bannerAd = '';
     // 清理图像资源
     this.backButton = '';
     this.backgroundImage.src = '';

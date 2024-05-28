@@ -1,33 +1,47 @@
 import {
-  drawRoundedRect
+  drawRoundedRect,
+  drawImageBtn
 } from '../../utils/button';
-import { scaleX, scaleY } from '../../utils/global';
+import { menuButtonInfo, scaleX, scaleY } from '../../utils/global';
 export default class Startup {
   constructor(game) {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
+    this.customAd = '';
     /* 图片加载区域开始 */
     this.backgroundImage = new Image();
     this.backgroundImage.src = 'image/thumbnail.jpg';
+    this.planningImage = new Image();
+    this.planningImage.src = 'image/rakhi.png';
+    this.settingsImage = new Image();
+    this.settingsImage.src = 'image/click.png';
     /* 图片加载区域结束 */
     /* 按钮设置开始 */
     // 设置开始按钮的基础设置
     this.buttonWidth = 180 * scaleX;
     this.buttonHeight = 50 * scaleY;
     this.buttonX = (this.canvas.width - this.buttonWidth) / 2;
-    this.buttonY = this.canvas.height - 240 * scaleY;
-    // 设置玩法说明按钮的基础设置
-    this.secondButtonWidth = this.buttonWidth;
-    this.secondButtonHeight = this.buttonHeight;
-    this.secondButtonX = this.buttonX;
-    this.secondButtonY = this.buttonY + this.buttonHeight + 10 * scaleY;
-    // 设置游戏设置按钮的基础设置
-    this.thirdButtonWidth = this.buttonWidth;
-    this.thirdButtonHeight = this.buttonHeight;
-    this.thirdButtonX = this.buttonX;
-    this.thirdButtonY = this.buttonY + this.buttonHeight + this.secondButtonHeight + 20 * scaleY;
+    this.buttonY = this.canvas.height - 120 * scaleY;
     /* 按钮设置结束 */
+    this.insBtn = '';
+    this.settingsBtn = '';
+    this.drawAd();
+  }
+  // 绘制广告
+  drawAd() {
+    this.customAd = wx.createCustomAd({
+      adUnitId: 'adunit-491a55ec61e4c122',
+      style: {
+          left: menuButtonInfo.right - 60,
+          top: menuButtonInfo.bottom + 10,
+          width: 60
+      }
+    });
+    this.customAd.show();
+    this.customAd.onError(err => {
+      console.error(err.errMsg)
+    });
   }
   // 绘制背景图
   drawBackground() {
@@ -35,13 +49,19 @@ export default class Startup {
       this.context.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
     }
   }
+  // 绘制玩法说明
+  drawInstruction() {
+    this.insBtn = drawImageBtn(this.context, this.planningImage, 10, menuButtonInfo.top, scaleX, scaleY, '说明');
+  }
+  // 游戏设置说明
+  drawSettings() {
+    this.settingsBtn = drawImageBtn(this.context, this.settingsImage, 10, menuButtonInfo.top + 42 * scaleY + 10 * scaleX, scaleX, scaleY, '设置');
+  }
   // 绘制按钮
   drawStartBtn() {
     this.context.save();
     // 开始按钮
     drawRoundedRect(this.context, this.buttonX, this.buttonY, this.buttonWidth, this.buttonHeight, 10, '#fc86bc99', 'black', 3);
-    drawRoundedRect(this.context, this.secondButtonX, this.secondButtonY, this.secondButtonWidth, this.secondButtonHeight, 10, '#fc86bc99', 'black', 3);
-    drawRoundedRect(this.context, this.thirdButtonX, this.thirdButtonY, this.thirdButtonWidth, this.thirdButtonHeight, 10, '#fc86bc99', 'black', 3);
     // 按钮文字
     this.context.fillStyle = 'black';
     this.context.font = `bold ${16 * scaleX}px Arial`;
@@ -49,8 +69,6 @@ export default class Startup {
     this.context.textBaseline = 'middle';
     // 将文本的y坐标设置为按钮的垂直中心
     this.context.fillText('寻回吾爱', this.buttonX + this.buttonWidth / 2, this.buttonY + this.buttonHeight / 2 + 2 * scaleY);
-    this.context.fillText('玩法说明', this.secondButtonX + this.secondButtonWidth / 2, this.secondButtonY + this.secondButtonHeight / 2 + 2 * scaleY);
-    this.context.fillText('游戏设置', this.thirdButtonX + this.thirdButtonWidth / 2, this.thirdButtonY + this.thirdButtonHeight / 2 + 2 * scaleY);
     this.context.restore();
   }
   // 绘制健康游戏公告
@@ -77,6 +95,10 @@ export default class Startup {
   draw() {
     // 绘制背景
     this.drawBackground();
+    // 绘制玩法说明
+    this.drawInstruction();
+    // 游戏设置说明
+    this.drawSettings();
     // 绘制按钮
     this.drawStartBtn();
     // 绘制健康游戏公告
@@ -113,19 +135,21 @@ export default class Startup {
         this.game.switchScene(new this.game.begin(this.game));
       }
     }
-    // 检测是否点击了第二个按钮
-    if (touch.clientX >= this.secondButtonX && touch.clientX <= this.secondButtonX + this.secondButtonWidth &&
-      touch.clientY >= this.secondButtonY && touch.clientY <= this.secondButtonY + this.secondButtonHeight) {
+    // 判断是否点击了玩法说明
+    if (touch.clientX >= this.insBtn.x && touch.clientX <= this.insBtn.x + this.insBtn.width && touch.clientY >= this.insBtn.y && touch.clientY <= this.insBtn.y + this.insBtn.height && !this.showDialogOrNot) {
       this.game.switchScene(new this.game.instruction(this.game));
     }
-    // 检测是否点击了第三个按钮
-    if (touch.clientX >= this.thirdButtonX && touch.clientX <= this.thirdButtonX + this.thirdButtonWidth &&
-      touch.clientY >= this.thirdButtonY && touch.clientY <= this.thirdButtonY + this.thirdButtonHeight) {
+    // 判断是否点击了设置玩法说明
+    if (touch.clientX >= this.settingsBtn.x && touch.clientX <= this.settingsBtn.x + this.settingsBtn.width && touch.clientY >= this.settingsBtn.y && touch.clientY <= this.settingsBtn.y + this.settingsBtn.height && !this.showDialogOrNot){
       this.game.switchScene(new this.game.settings(this.game));
     }
   }
   // 页面销毁机制
   destroy() {
+    this.customAd.destroy();
+    this.customAd = '';
     this.backgroundImage.src = '';
+    this.insBtn = '';
+    this.settingsBtn = '';
   }
 }

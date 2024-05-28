@@ -11,23 +11,45 @@ export default class Instruction {
     this.game = game;
     this.canvas = game.canvas;
     this.context = game.context;
+    // 底部 banner
+    this.bannerAd = '';
     /* 图片加载区域开始 */
     this.backgroundImage = new Image();
     this.backgroundImage.src = 'image/thumbnail.jpg';
     this.backButton = '';
     this.role = new Image();
     this.role.src = 'image/front1.png';
-    this.necklace = new Image();
-    this.necklace.src = 'image/necklace.png';
+    this.cycleIcon = new Image();
+    this.cycleIcon.src = 'image/cycle.png';
     this.clickIcon = new Image();
     this.clickIcon.src = 'image/click.png';
     /* 图片加载区域结束 */
     /* 常量设置区域开始 */
-    this.tabs = ['背景', '角色', '道具', '玩法'];
+    this.tabs = ['背景', '角色', '技能', '玩法'];
     this.paragraph = `看到桌上的离婚协议\n刘逸尘的眼眸里满是悔恨\n泪水无声地滑落，落在离婚协议上\n进而渗透到离婚协议下的旧相片\n相片记录着他们二人幸福的时刻\n两人笑得灿烂而天真\n在这一瞬间，离婚协议和那张相片\n仿佛成为了时光的交汇点\n刘逸尘不禁沉浸在过去的美好回忆中\n突然间，一种神秘的力量涌现\n刘逸尘被白光吞没\n当他再次睁开眼睛时\n他竟然身处在一处恐怖洞穴\n一场寻爱的奇妙之旅就此展开～～`;
     // 当前选中的标签索引
     this.selectedIndex = 0;
     /* 常量设置区域结束 */
+    this.drawAd();
+  }
+  // 绘制广告
+  drawAd() {
+    this.bannerAd = wx.createBannerAd({
+      adUnitId: 'adunit-4f0b6ad55f2a8b10',
+      style: {
+          left: 10,
+          top: 0,
+          width: this.canvas.width - 20
+      }
+    });
+    this.bannerAd.show()
+    this.bannerAd.onResize(res => {
+      this.bannerAd.style.top = this.canvas.height - res.height - 10
+    })
+    // 监听 banner 广告错误事件
+    this.bannerAd.onError(err => {
+      console.error(err.errMsg)
+    });
   }
   // 绘制背景
   drawBackground() {
@@ -134,7 +156,7 @@ export default class Instruction {
       const iconX = 10 * scaleY;
       const iconHeight = 32 * scaleY;
       const iconWidth = 32 * scaleY;
-      const intro = ['名称：时空项链', '功效：关键之匙，开启某些地方']
+      const intro = ['名称：瞬移之环', '功效：按下发射键可瞬移至', '圆环所到之处']
       // 计算文本高度和总内容高度
       const textHeight = fontSize * 1.2;
       let compareHeight = intro.length * textHeight >= iconHeight ? intro.length * textHeight : iconHeight
@@ -145,8 +167,8 @@ export default class Instruction {
       this.context.fillRect(tabX, tabContentY, tabWidth, contentHeight);
       this.context.strokeRect(tabX, tabContentY, tabWidth, contentHeight);
       // 绘制道具图片
-      if (this.necklace.complete) {
-        this.context.drawImage(this.necklace, tabX + iconX, tabContentY + 10 * scaleY, iconWidth, iconHeight);
+      if (this.cycleIcon.complete) {
+        this.context.drawImage(this.cycleIcon, tabX + iconX, tabContentY + 10 * scaleY, iconWidth, iconHeight);
       }
       // 右侧文本
       this.context.fillStyle = '#000000';
@@ -223,11 +245,13 @@ export default class Instruction {
   }
   // 页面销毁机制
   destroy() {
+    this.bannerAd.hide();
+    this.bannerAd = '';
     // 清理图像资源
     this.backButton = '';
     this.backgroundImage.src = '';
     this.role.src = '';
-    this.necklace.src = '';
+    this.cycleIcon.src = '';
     this.clickIcon.src = '';
   }
 }
